@@ -129,18 +129,9 @@ export default function Dashboard() {
       <div className="page-content">
         {count > 0 && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-            <Users size={14} color="var(--text-sub)" />
-            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-              Teammates · {count}
-            </span>
-          </div>
-        )}
-
-        <div className="presence-grid">
-          {Object.entries(teammates).map(([peerId, data]) => {
+                {Object.entries(teammates).map(([peerId, data]) => {
             const inHuddle  = huddle.active && huddle.members.includes(peerId);
             const available = data.status === 'Available';
-            const dotClass  = (data.status ?? 'available').toLowerCase().replace(' ', '-');
 
             return (
               <div
@@ -149,7 +140,15 @@ export default function Dashboard() {
                 onClick={() => handleTapToTalk(peerId)}
                 style={{ '--avatar-color': data.avatar?.color }}
               >
-                {/* Colour wash */}
+                {/* Role Badge (Floating top-left) */}
+                {data.role && (
+                  <div className="tile-role">
+                    <span className="tile-role-dot" />
+                    {data.role}
+                  </div>
+                )}
+
+                {/* Colour wash background */}
                 <div className="tile-bg" />
 
                 {/* Avatar with vivid ring */}
@@ -167,10 +166,7 @@ export default function Dashboard() {
                 {/* Name */}
                 <div className="tile-name">{data.name}</div>
 
-                {/* Role & Seniority */}
-                {data.role && <div className="tile-role">{data.role}</div>}
-
-                {/* Status */}
+                {/* Status Row */}
                 <div className="tile-status-row">
                   <div className={`tile-status-dot ${(data.status ?? 'available').toLowerCase().replace(' ', '-')}`} />
                   <span className="tile-status-label">{data.status}</span>
@@ -182,7 +178,7 @@ export default function Dashboard() {
                 </div>
 
                 {/* Tap to talk overlay */}
-                {data.status === 'Available' && !huddle.active && (
+                {available && !huddle.active && (
                   <div className="tile-cta">
                     <div className="tile-cta-pill">
                       <Mic size={13} /> Talk
@@ -190,7 +186,6 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
-
             );
           })}
 
