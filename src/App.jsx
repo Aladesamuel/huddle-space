@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Users, LogOut } from 'lucide-react';
+import { Users, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import Home from './pages/Home';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
@@ -9,17 +9,24 @@ import './index.css';
 
 const STATUS_COLOR = { Available: '#34a853', Busy: '#ea4335', 'On Break': '#fbbc04' };
 
-function Sidebar() {
+function Sidebar({ collapsed, setCollapsed }) {
   const { user } = useStore();
   const location = useLocation();
   const inOffice  = location.pathname.startsWith('/office');
 
   return (
-    <nav className="sidebar">
-      {/* Logo mark */}
-      <div className="sidebar-logo">🎙</div>
+    <nav className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`}>
 
-      {/* Only show the Office icon when inside an office */}
+      {/* Collapse / expand toggle — replaces the logo */}
+      <button
+        className="sidebar-btn sidebar-collapse-btn"
+        onClick={() => setCollapsed(c => !c)}
+        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+      >
+        {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+      </button>
+
+      {/* Office icon — only when inside an office */}
       {user && inOffice && (
         <button className="sidebar-btn active" title="Office">
           <Users size={20} />
@@ -28,16 +35,13 @@ function Sidebar() {
 
       <div className="sidebar-spacer" />
 
-      {/* Status indicator dot */}
+      {/* Status dot */}
       {user && (
         <div style={{ position: 'relative' }}>
           <select
             value={user.status}
             onChange={e => useStore.getState().updateStatus(e.target.value)}
-            style={{
-              opacity: 0, position: 'absolute', inset: 0,
-              width: '100%', height: '100%', cursor: 'pointer', zIndex: 2,
-            }}
+            style={{ opacity: 0, position: 'absolute', inset: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 2 }}
           >
             <option value="Available">Available</option>
             <option value="Busy">Busy</option>
@@ -58,18 +62,14 @@ function Sidebar() {
       {user && (
         <div
           className="sidebar-btn"
-          style={{
-            background: user.avatar?.bg ?? 'rgba(255,255,255,0.06)',
-            fontSize: 18, cursor: 'default',
-            border: '2px solid rgba(255,255,255,0.1)',
-          }}
+          style={{ background: user.avatar?.bg ?? 'rgba(255,255,255,0.06)', fontSize: 18, cursor: 'default', border: '2px solid rgba(255,255,255,0.1)' }}
           title={user.name}
         >
           {user.avatar?.icon}
         </div>
       )}
 
-      {/* Sign out */}
+      {/* Leave */}
       {user && (
         <button
           className="sidebar-btn"
@@ -86,11 +86,13 @@ function Sidebar() {
 
 export default function App() {
   const { user } = useStore();
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
     <Router>
-      <div className="app-container">
-        <Sidebar />
-        <main>
+      <div className={`app-container${collapsed ? ' sidebar-is-collapsed' : ''}`}>
+        <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+        <main style={{ marginLeft: collapsed ? '0px' : 'var(--sidebar-w)', transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)' }}>
           <Routes>
             <Route path="/"             element={<Home />} />
             <Route path="/room/:roomId" element={<Onboarding />} />

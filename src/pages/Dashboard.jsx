@@ -37,7 +37,11 @@ export default function Dashboard() {
   };
 
   const copyInvite = () => {
-    navigator.clipboard.writeText(window.location.href.replace('/office/', '/room/'));
+    // Reconstruct the full invite link from stored office data (preserves name, rules, password)
+    const data    = { n: office?.name, r: office?.rules, p: !!office?.p, h: office?.h ?? null };
+    const encoded = btoa(JSON.stringify(data));
+    const link    = `${window.location.origin}/room/${office?.id}#data=${encoded}`;
+    navigator.clipboard.writeText(link);
     alert('Invite link copied!');
   };
 

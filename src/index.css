@@ -88,6 +88,36 @@ main {
 
 .sidebar-spacer { flex: 1; }
 
+/* Collapsed state */
+.sidebar-collapsed {
+  width: 0 !important;
+  padding: 0 !important;
+  overflow: hidden;
+  border-right-color: transparent;
+  transition: width 0.3s cubic-bezier(0.4,0,0.2,1),
+              padding 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+.sidebar-collapsed .sidebar-btn,
+.sidebar-collapsed .sidebar-spacer {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+/* Keep the collapse button visible and accessible even when collapsed */
+.sidebar-collapsed .sidebar-collapse-btn {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.sidebar-collapse-btn {
+  transition: color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.sidebar-collapse-btn:hover {
+  color: var(--text) !important;
+  transform: scale(1.08);
+}
+
+
 .sidebar-btn {
   width: 44px; height: 44px;
   border-radius: 12px;

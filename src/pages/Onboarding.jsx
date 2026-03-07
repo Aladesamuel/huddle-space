@@ -44,7 +44,7 @@ export default function Onboarding() {
       setError('Incorrect password.'); return;
     }
     setUser({ id: Math.random().toString(36).slice(2, 9), name: userName, email: userEmail, avatar, status: 'Available' });
-    setOffice({ name: officeData?.n ?? 'Virtual Office', rules: officeData?.r, id: roomId });
+    setOffice({ name: officeData?.n ?? 'Virtual Office', rules: officeData?.r, id: roomId, p: officeData?.p, h: officeData?.h });
     navigate(`/office/${roomId}`);
   };
 
