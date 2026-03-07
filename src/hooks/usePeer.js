@@ -168,36 +168,33 @@ export default function usePeer(roomId) {
     const currentUser = userRef.current;
     switch (data.type) {
       case 'PRESENCE':
-        // Remove any old references to the same email with a different peerId
-        Object.entries(teammatesRef.current).forEach(([pid, tm]) => {
-          if (tm.email === data.profile.email && pid !== conn.peer) {
-            removeTeammate(pid);
-            if (connectionsRef.current[pid]) {
-              connectionsRef.current[pid].close();
-              delete connectionsRef.current[pid];
-            }
-          }
-        });
+        // Update local teammate state and heartbeat
         setTeammate(conn.peer, { ...data.profile, status: data.status, heartbeat: Date.now() });
+        // If it's an initial presence, send ours back immediately
         if (data.isInitial) {
           conn.send({ type: 'PRESENCE', profile: currentUser, status: currentUser?.status || 'Available', isInitial: false });
         }
         break;
-      case 'HEARTBEAT':
+      case 'PULSE':
+        // Faster heartbeat rename for clarity
         if (teammatesRef.current[conn.peer]) {
-          setTeammate(conn.peer, { heartbeat: Date.now() });
+          setTeammate(conn.peer, { heartbeat: Date.now(), status: data.status });
         } else {
+          // If we see a pulse from someone we don't know well, request full sync
           conn.send({ type: 'REQUEST_SYNC' });
         }
         break;
       case 'PEER_LIST':
+        // Gossip protocol: try to connect to any peer we don't know yet
         data.peers.forEach(pid => {
           if (pid !== peerRef.current?.id && !connectionsRef.current[pid]) {
+            console.log('Discovered new peer via mesh:', pid);
             connectToPeerRef.current?.(pid);
           }
         });
         break;
       case 'REQUEST_SYNC':
+        // Share our known peers with the requester
         conn.send({ type: 'PEER_LIST', peers: [peerRef.current?.id, ...Object.keys(connectionsRef.current)] });
         break;
       case 'HUDDLE_INVITE': {
@@ -330,17 +327,32 @@ export default function usePeer(roomId) {
     }
   }, [callScreenPeer, broadcast, stopScreenShare]);
 
-  // ─── Pruning & Heartbeat ───────────────────────────────────────────────
+  // ─── Pruning & Pulse (Heartbeat) ──────────────────────────────────────────
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
+      const pulseStatus = userRef.current?.status || 'Available';
+      
+      // 1. Prune dead peers (Faster timeout: 12 seconds)
       Object.entries(teammatesRef.current).forEach(([pid, d]) => {
-        if (d.heartbeat && now - d.heartbeat > 45000) {
+        if (d.heartbeat && now - d.heartbeat > 12000) {
+          console.log('Peer timed out:', pid);
           removeTeammate(pid);
+          if (connectionsRef.current[pid]) {
+            connectionsRef.current[pid].close();
+            delete connectionsRef.current[pid];
+          }
         }
       });
-      broadcast({ type: 'HEARTBEAT' });
-    }, 10000);
+      
+      // 2. Send Pulse message to all active connections
+      broadcast({ type: 'PULSE', status: pulseStatus });
+      
+      // 3. Occasionally request sync to ensure mesh is complete
+      if (Math.random() > 0.7) {
+        broadcast({ type: 'REQUEST_SYNC' });
+      }
+    }, 3000); // 3-second pulse for professional responsiveness
     return () => clearInterval(id);
   }, [removeTeammate, broadcast]);
 
@@ -363,17 +375,33 @@ export default function usePeer(roomId) {
     
     peerRef.current = peer;
 
+    peer.on('error', err => {
+      console.error('Main Peer error:', err.type, err);
+      if (err.type === 'network' || err.type === 'server-error') {
+        // Try to reconnect to signaling server if disconnected
+        setTimeout(() => {
+          if (!peer.destroyed && !peer.disconnected) peer.reconnect();
+        }, 3000);
+      }
+    });
+
+    peer.on('disconnected', () => {
+      console.warn('Peer disconnected from signaling server, attempting reconnect...');
+      peer.reconnect();
+    });
+
     peer.on('open', (id) => {
       setIsReady(true);
       setActivePeer(peer);
       // Wait a tiny bit for the networking layer to stabilize
-      setTimeout(() => connectToPeer(seedId), 500);
+      setTimeout(() => connectToPeer(seedId), 1000);
     });
 
     peer.on('connection', conn => {
       conn.on('open', () => {
         connectionsRef.current[conn.peer] = conn;
-        // When someone connects to us, they might need our profile
+        // Broadcast presence immediately to the new person
+        conn.send({ type: 'PRESENCE', profile: userRef.current, status: userRef.current?.status || 'Available', isInitial: false });
         conn.on('data', d => handleData(conn, d));
       });
       conn.on('close', () => {
@@ -384,6 +412,9 @@ export default function usePeer(roomId) {
           }, 1000);
         }
       });
+      conn.on('error', () => {
+        delete connectionsRef.current[conn.peer];
+      });
     });
 
     peer.on('call', call => {
@@ -391,42 +422,51 @@ export default function usePeer(roomId) {
       else answerAudioCall(call);
     });
 
-    // Try to become the Seed
+    // Try to become the Seed (Reliability anchor)
     let seedPeer;
     try {
-      seedPeer = new Peer(seedId);
+      seedPeer = new Peer(seedId, { debug: 1 });
       seedPeer.on('open', () => {
+        console.log('Registered as Seed Peer for this room.');
         seedPeer.on('connection', conn => {
           conn.on('open', () => {
             connectionsRef.current[conn.peer] = conn;
+            // Seed provides the gateway to the existing mesh
             conn.send({ type: 'PEER_LIST', peers: [myId, ...Object.keys(connectionsRef.current).filter(k => k !== conn.peer)] });
           });
           conn.on('data', d => handleData(conn, d));
         });
       });
       seedPeer.on('error', err => {
-        if (err.type === 'unavailable-id') seedPeer.destroy();
+        if (err.type === 'unavailable-id') {
+          // Seed already exists, which is normal
+          seedPeer.destroy();
+        } else {
+          console.error('Seed Peer error:', err);
+        }
       });
     } catch (e) {
-      console.log('Seed already active');
+      console.log('Seed initialization skipped');
     }
 
     return () => {
       stopAudio();
+      stopScreenShare();
       peer.destroy();
-      if (seedPeer) seedPeer.destroy();
+      if (seedPeer && !seedPeer.destroyed) seedPeer.destroy();
       peerRef.current = null;
       setActivePeer(null);
       connectionsRef.current = {};
     };
   }, [roomId, user?.id, handleData, connectToPeer, stopAudio, answerAudioCall, answerScreenCall, removeTeammate]);
 
-  // ─── Sync status ─────────────────────────────────────────────────────────
+  // ─── Sync profile & status ──────────────────────────────────────────────
   useEffect(() => {
-    if (isReady && user?.status) {
-      broadcast({ type: 'PRESENCE', profile: userRef.current, status: userRef.current.status });
+    if (isReady && user) {
+      console.log('Broadcasting updated profile/status');
+      broadcast({ type: 'PRESENCE', profile: user, status: user.status || 'Available' });
     }
-  }, [user?.status, isReady, broadcast]);
+  }, [user?.name, user?.status, user?.avatar?.bg, isReady, broadcast]);
 
   return {
     peer: activePeer,

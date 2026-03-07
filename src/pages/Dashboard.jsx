@@ -128,84 +128,81 @@ export default function Dashboard() {
       {/* ── Presence Grid ────────────────────────────────────────────────── */}
       <div className="page-content">
         {count > 0 && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-                {Object.entries(teammates).map(([peerId, data]) => {
-            const inHuddle  = huddle.active && huddle.members.includes(peerId);
-            const available = data.status === 'Available';
-
-            return (
-              <div
-                key={peerId}
-                className={`presence-tile ${inHuddle ? 'in-huddle' : ''}`}
-                onClick={() => handleTapToTalk(peerId)}
-                style={{ '--avatar-color': data.avatar?.color }}
-              >
-                {/* Role Badge (Floating top-left) */}
-                {data.role && (
-                  <div className="tile-role">
-                    <span className="tile-role-dot" />
-                    {data.role}
-                  </div>
-                )}
-
-                {/* Colour wash background */}
-                <div className="tile-bg" />
-
-                {/* Avatar with vivid ring */}
-                <div
-                  className="tile-avatar"
-                  style={{
-                    background: data.avatar?.bg ?? 'rgba(255,255,255,0.06)',
-                    border: `3px solid ${data.avatar?.color ?? 'rgba(255,255,255,0.2)'}`,
-                    boxShadow: `0 0 0 2px rgba(0,0,0,0.6), 0 0 20px ${data.avatar?.color ?? 'transparent'}55`,
-                  }}
-                >
-                  {data.avatar?.icon ?? data.name?.[0]}
-                </div>
-
-                {/* Name */}
-                <div className="tile-name">{data.name}</div>
-
-                {/* Status Row */}
-                <div className="tile-status-row">
-                  <div className={`tile-status-dot ${inHuddle ? 'in-huddle-status' : (data.status ?? 'available').toLowerCase().replace(' ', '-')}`} />
-                  <span className="tile-status-label">{inHuddle ? 'In Huddle' : data.status}</span>
-                  {inHuddle && (
-                    <div className="tile-wave" style={{ marginLeft: 4 }}>
-                      <span /><span /><span />
-                    </div>
-                  )}
-                </div>
-
-                {/* Tap to talk overlay */}
-                {available && !huddle.active && (
-                  <div className="tile-cta">
-                    <div className="tile-cta-pill">
-                      <Mic size={13} /> Talk
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-
-          {/* Empty state */}
-          {count === 0 && (
-            <div className="empty-grid">
-              <div style={{
-                width: 56, height: 56, background: 'rgba(255,255,255,0.04)',
-                borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <Users size={26} strokeWidth={1.5} color="var(--text-ghost)" />
-              </div>
-              <h3>Just you for now</h3>
-              <p>Share the invite link to get your team in.</p>
-              <button className="btn btn-outline" onClick={copyInvite} style={{ marginTop: 8 }}>
-                <Share2 size={14} /> Copy Invite Link
-              </button>
+          <>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+              <Users size={14} color="var(--text-sub)" />
+              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                Teammates · {count}
+              </span>
             </div>
-          )}
-        </div>
+            <div className="presence-grid">
+              {Object.entries(teammates).map(([peerId, data]) => {
+                const inHuddle  = huddle.active && huddle.members.includes(peerId);
+                const available = data.status === 'Available';
+                return (
+                  <div
+                    key={peerId}
+                    className={`presence-tile ${inHuddle ? 'in-huddle' : ''}`}
+                    onClick={() => handleTapToTalk(peerId)}
+                    style={{ '--avatar-color': data.avatar?.color }}
+                  >
+                    {data.role && (
+                      <div className="tile-role">
+                        <span className="tile-role-dot" />
+                        {data.role}
+                      </div>
+                    )}
+                    <div className="tile-bg" />
+                    <div
+                      className="tile-avatar"
+                      style={{
+                        background: data.avatar?.bg ?? 'rgba(255,255,255,0.06)',
+                        border: `3px solid ${data.avatar?.color ?? 'rgba(255,255,255,0.2)'}`,
+                        boxShadow: `0 0 0 2px rgba(0,0,0,0.6), 0 0 20px ${data.avatar?.color ?? 'transparent'}55`,
+                      }}
+                    >
+                      {data.avatar?.icon ?? data.name?.[0]}
+                    </div>
+                    <div className="tile-name">{data.name}</div>
+                    <div className="tile-status-row">
+                      <div className={`tile-status-dot ${inHuddle ? 'in-huddle-status' : (data.status ?? 'available').toLowerCase().replace(' ', '-')}`} />
+                      <span className="tile-status-label">{inHuddle ? 'In Huddle' : data.status}</span>
+                      {inHuddle && (
+                        <div className="tile-wave" style={{ marginLeft: 4 }}>
+                          <span /><span /><span />
+                        </div>
+                      )}
+                    </div>
+                    {available && !huddle.active && (
+                      <div className="tile-cta">
+                        <div className="tile-cta-pill">
+                          <Mic size={13} /> Talk
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </>
+        )}
+
+        {/* Empty state */}
+        {count === 0 && (
+          <div className="empty-grid">
+            <div style={{
+              width: 56, height: 56, background: 'rgba(255,255,255,0.04)',
+              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Users size={26} strokeWidth={1.5} color="var(--text-ghost)" />
+            </div>
+            <h3>Just you for now</h3>
+            <p>Share the invite link to get your team in.</p>
+            <button className="btn btn-outline" onClick={copyInvite} style={{ marginTop: 8 }}>
+              <Share2 size={14} /> Copy Invite Link
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ── Huddle bottom bar ────────────────────────────────────────────── */}
