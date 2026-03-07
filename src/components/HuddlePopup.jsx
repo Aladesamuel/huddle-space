@@ -9,9 +9,38 @@ export default function HuddleBar({
 }) {
   const { huddle, teammates, user, leaveHuddle } = useStore();
 
-  const [showAddMenu, setShowAddMenu] = useState(false);
-  const [screenFull,  setScreenFull]  = useState(false);
+  const [showAddMenu,      setShowAddMenu]      = useState(false);
+  const [screenFull,       setScreenFull]        = useState(false);
+  const [screenPos,        setScreenPos]         = useState({ x: 0, y: 0 });
+  const [isScreenDragging, setIsScreenDragging]  = useState(false);
+  const screenDragStart = useRef({ x: 0, y: 0 });
   const audioStartedRef = useRef(false);
+
+  /* ── Screen viewer drag ─────────────────────────────────────────────── */
+  const handleScreenMouseDown = (e) => {
+    if (e.target.closest('button')) return;
+    setIsScreenDragging(true);
+    screenDragStart.current = { x: e.clientX - screenPos.x, y: e.clientY - screenPos.y };
+  };
+
+  useEffect(() => {
+    const onMove = (e) => {
+      if (!isScreenDragging) return;
+      setScreenPos({ x: e.clientX - screenDragStart.current.x, y: e.clientY - screenDragStart.current.y });
+    };
+    const onUp = () => setIsScreenDragging(false);
+    if (isScreenDragging) {
+      window.addEventListener('mousemove', onMove);
+      window.addEventListener('mouseup',  onUp);
+    }
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup',  onUp);
+    };
+  }, [isScreenDragging]);
+
+  /* Reset position when a new stream arrives */
+  useEffect(() => { setScreenPos({ x: 0, y: 0 }); }, [remoteScreenStream]);
 
   /* ── Audio lifecycle ─────────────────────────────────────────────────── */
   useEffect(() => {
@@ -62,22 +91,36 @@ export default function HuddleBar({
 
       {/* ── Screen share viewer ─────────────────────────────────────────── */}
       {remoteScreenStream && (
-        <div className={`screen-viewer${screenFull ? ' full' : ''}`}>
+        <div
+          className={`screen-viewer${screenFull ? ' full' : ''}`}
+          style={{
+            transform: screenFull ? 'none' : `translate(${screenPos.x}px, ${screenPos.y}px)`,
+            transition: isScreenDragging ? 'none' : 'transform 0.25s cubic-bezier(0.16,1,0.3,1)',
+            userSelect: isScreenDragging ? 'none' : 'auto',
+          }}
+        >
           <video
             ref={el => { if (el && el.srcObject !== remoteScreenStream) el.srcObject = remoteScreenStream; }}
             autoPlay playsInline muted
           />
-          <div className="screen-viewer-bar">
-            <span style={{ color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7 }}>
-              <Monitor size={14} /> {sharerName} is sharing their screen
+          {/* Drag handle + controls */}
+          <div
+            className="screen-viewer-bar"
+            onMouseDown={screenFull ? undefined : handleScreenMouseDown}
+            style={{ cursor: screenFull ? 'default' : (isScreenDragging ? 'grabbing' : 'grab') }}
+          >
+            <span style={{ color: '#fff', fontSize: 13, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 7, pointerEvents: 'none' }}>
+              <Monitor size={14} /> {sharerName} is sharing · drag to move
             </span>
-            <button
-              onClick={() => setScreenFull(f => !f)}
-              style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}
-            >
-              {screenFull ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-              {screenFull ? 'Shrink' : 'Expand'}
-            </button>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button
+                onClick={() => { setScreenFull(f => !f); setScreenPos({ x: 0, y: 0 }); }}
+                style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 8, padding: '6px 14px', cursor: 'pointer', fontSize: 12, display: 'flex', alignItems: 'center', gap: 5 }}
+              >
+                {screenFull ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                {screenFull ? 'Shrink' : 'Expand'}
+              </button>
+            </div>
           </div>
         </div>
       )}
