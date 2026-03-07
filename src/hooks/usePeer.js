@@ -145,11 +145,14 @@ export default function usePeer(roomId) {
     const currentUser = userRef.current;
     switch (data.type) {
       case 'PRESENCE':
+        // Remove any old references to the same email with a different peerId
         Object.entries(teammatesRef.current).forEach(([pid, tm]) => {
           if (tm.email === data.profile.email && pid !== conn.peer) {
             removeTeammate(pid);
-            connectionsRef.current[pid]?.close();
-            delete connectionsRef.current[pid];
+            if (connectionsRef.current[pid]) {
+              connectionsRef.current[pid].close();
+              delete connectionsRef.current[pid];
+            }
           }
         });
         setTeammate(conn.peer, { ...data.profile, status: data.status, heartbeat: Date.now() });
@@ -161,13 +164,14 @@ export default function usePeer(roomId) {
         if (teammatesRef.current[conn.peer]) {
           setTeammate(conn.peer, { heartbeat: Date.now() });
         } else {
-          // If we get a heartbeat from someone we don't know, request their presence
           conn.send({ type: 'REQUEST_SYNC' });
         }
         break;
       case 'PEER_LIST':
         data.peers.forEach(pid => {
-          if (pid !== peerRef.current?.id && !connectionsRef.current[pid]) connectToPeerRef.current?.(pid);
+          if (pid !== peerRef.current?.id && !connectionsRef.current[pid]) {
+            connectToPeerRef.current?.(pid);
+          }
         });
         break;
       case 'REQUEST_SYNC':
@@ -231,20 +235,37 @@ export default function usePeer(roomId) {
   // ─── Connect to a data peer ──────────────────────────────────────────────
   const connectToPeer = useCallback((peerId, isInitial = true) => {
     if (!peerRef.current || connectionsRef.current[peerId] || peerId === peerRef.current.id) return;
+    
+    // Explicitly check if we already have an open connection
+    if (connectionsRef.current[peerId]?.open) return;
+
     const conn = peerRef.current.connect(peerId);
     if (!conn) return;
+
     connectionsRef.current[peerId] = conn;
+
     conn.on('open', () => {
       conn.send({ type: 'PRESENCE', profile: userRef.current, status: userRef.current?.status || 'Available', isInitial });
       conn.send({ type: 'REQUEST_SYNC' });
     });
+
     conn.on('data', d => handleData(conn, d));
-    // We don't removeTeammate on close immediately to prevent blinking.
-    // The heartbeat timeout (60s) will handle actual dead connections.
-    const cleanup = () => { delete connectionsRef.current[peerId]; };
+
+    const cleanup = () => {
+      if (connectionsRef.current[peerId] === conn) {
+        delete connectionsRef.current[peerId];
+        // Short delay before removing teammate to handle transient drops/reconnects
+        setTimeout(() => {
+          if (!connectionsRef.current[peerId]) {
+            removeTeammate(peerId);
+          }
+        }, 1000);
+      }
+    };
+
     conn.on('close', cleanup);
     conn.on('error', cleanup);
-  }, [handleData]);
+  }, [handleData, removeTeammate]);
 
   useEffect(() => { connectToPeerRef.current = connectToPeer; }, [connectToPeer]);
 
@@ -292,13 +313,12 @@ export default function usePeer(roomId) {
     const id = setInterval(() => {
       const now = Date.now();
       Object.entries(teammatesRef.current).forEach(([pid, d]) => {
-        // Prune after 60 seconds of no activity (more slack for P2P jitter)
-        if (d.heartbeat && now - d.heartbeat > 60000) {
+        if (d.heartbeat && now - d.heartbeat > 45000) {
           removeTeammate(pid);
         }
       });
       broadcast({ type: 'HEARTBEAT' });
-    }, 10000); // Send heartbeat every 10s
+    }, 10000);
     return () => clearInterval(id);
   }, [removeTeammate, broadcast]);
 
@@ -311,7 +331,9 @@ export default function usePeer(roomId) {
     
     let peer;
     try {
-      peer = new Peer(myId);
+      peer = new Peer(myId, {
+        debug: 1 // Only errors
+      });
     } catch (e) {
       console.error('Peer creation failed:', e);
       return;
@@ -319,17 +341,27 @@ export default function usePeer(roomId) {
     
     peerRef.current = peer;
 
-    peer.on('open', () => {
+    peer.on('open', (id) => {
       setIsReady(true);
       setActivePeer(peer);
-      connectToPeer(seedId);
+      // Wait a tiny bit for the networking layer to stabilize
+      setTimeout(() => connectToPeer(seedId), 500);
     });
 
     peer.on('connection', conn => {
-      conn.on('open', () => { connectionsRef.current[conn.peer] = conn; });
-      conn.on('data', d => handleData(conn, d));
-      conn.on('close', () => { delete connectionsRef.current[conn.peer]; });
-      conn.on('error', () => { delete connectionsRef.current[conn.peer]; });
+      conn.on('open', () => {
+        connectionsRef.current[conn.peer] = conn;
+        // When someone connects to us, they might need our profile
+        conn.on('data', d => handleData(conn, d));
+      });
+      conn.on('close', () => {
+        if (connectionsRef.current[conn.peer] === conn) {
+          delete connectionsRef.current[conn.peer];
+          setTimeout(() => {
+            if (!connectionsRef.current[conn.peer]) removeTeammate(conn.peer);
+          }, 1000);
+        }
+      });
     });
 
     peer.on('call', call => {
@@ -338,29 +370,29 @@ export default function usePeer(roomId) {
     });
 
     // Try to become the Seed
+    let seedPeer;
     try {
-      const trySeed = new Peer(seedId);
-      trySeed.on('open', () => {
-        trySeed.on('connection', conn => {
+      seedPeer = new Peer(seedId);
+      seedPeer.on('open', () => {
+        seedPeer.on('connection', conn => {
           conn.on('open', () => {
             connectionsRef.current[conn.peer] = conn;
-            conn.send({ type: 'PEER_LIST', peers: Object.keys(connectionsRef.current) });
+            conn.send({ type: 'PEER_LIST', peers: [myId, ...Object.keys(connectionsRef.current).filter(k => k !== conn.peer)] });
           });
           conn.on('data', d => handleData(conn, d));
         });
-        trySeed.on('call', call => {
-          if (call.metadata?.type === 'screen') answerScreenCall(call);
-          else answerAudioCall(call);
-        });
       });
-      trySeed.on('error', err => { if (err.type === 'unavailable-id') trySeed.destroy(); });
+      seedPeer.on('error', err => {
+        if (err.type === 'unavailable-id') seedPeer.destroy();
+      });
     } catch (e) {
-      console.log('Seed Peer already exists or failed:', e);
+      console.log('Seed already active');
     }
 
     return () => {
       stopAudio();
       peer.destroy();
+      if (seedPeer) seedPeer.destroy();
       peerRef.current = null;
       setActivePeer(null);
       connectionsRef.current = {};
