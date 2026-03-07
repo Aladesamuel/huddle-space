@@ -96,6 +96,7 @@ export default function App() {
         {/* Floating re-open tab — appears only when sidebar is collapsed */}
         {collapsed && (
           <button
+            className="sidebar-toggle-floating"
             onClick={() => setCollapsed(false)}
             title="Expand sidebar"
             style={{

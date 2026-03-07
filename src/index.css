@@ -568,3 +568,114 @@ textarea.form-input { resize: vertical; }
   border-radius: var(--r-btn); padding: 13px 16px;
   font-size: 13px; color: #f48771; line-height: 1.5;
 }
+/* ── Responsive Design ──────────────────────────────────────────────────── */
+
+/* Tablet Optimization */
+@media (max-width: 1024px) {
+  .presence-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+  }
+}
+
+/* Mobile Overhaul */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-w: 0px; /* Hide sidebar space */
+  }
+
+  /* Transform sidebar into a top bar or drawer icon */
+  .sidebar {
+    width: 100% !important;
+    height: 56px !important;
+    flex-direction: row !important;
+    padding: 0 16px !important;
+    bottom: auto !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    justify-content: space-between !important;
+    background: rgba(28, 30, 33, 0.95) !important;
+    backdrop-filter: blur(12px);
+  }
+
+  .sidebar-toggle-floating { display: none !important; }
+  .sidebar-collapse-btn { display: none !important; }
+  .sidebar-spacer { display: none !important; }
+  .sidebar-btn { width: 40px !important; height: 40px !important; }
+  
+  /* Layout shifts */
+  main {
+    margin-left: 0 !important;
+    padding-top: 56px !important; /* Space for top bar */
+  }
+
+  .page-header {
+    padding: 16px !important;
+    height: auto !important;
+    min-height: 56px !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 12px !important;
+  }
+  
+  .page-content {
+    padding: 0 16px 120px !important;
+  }
+
+  /* Grid: 2 columns on mobile */
+  .presence-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+  }
+  .presence-tile {
+    padding: 24px 12px 18px !important;
+  }
+  .tile-avatar {
+    width: 64px !important;
+    height: 64px !important;
+    font-size: 28px !important;
+  }
+  .tile-name { font-size: 14px !important; }
+  .tile-role { top: 8px !important; left: 8px !important; padding: 4px 8px !important; font-size: 9px !important; }
+
+  .huddle-bar {
+    left: 0 !important;
+    height: 72px !important;
+    padding: 0 8px !important;
+    gap: 8px !important;
+  }
+  .huddle-members, .huddle-status { display: none !important; } /* Hide side elements to save space */
+  .ctrl-icon { width: 44px !important; height: 44px !important; }
+  .ctrl-label { display: none !important; } /* Hide labels on mobile buttons */
+  
+  /* Forms on Mobile */
+  .auth-card {
+    padding: 24px 20px !important;
+    width: 95% !important;
+  }
+
+  .screen-viewer {
+    width: 98vw !important;
+    top: 66px !important;
+    left: 1vw !important;
+    transform: none !important;
+  }
+  
+  .share-badge {
+    top: 64px !important;
+    font-size: 11px !important;
+    padding: 6px 14px !important;
+  }
+
+  .connecting-toast {
+    left: 16px !important;
+    bottom: 84px !important;
+  }
+}
+
+/* Very Small Devices */
+@media (max-width: 380px) {
+  .presence-grid {
+    grid-template-columns: 1fr !important; /* Stack on very small screens */
+  }
+}
