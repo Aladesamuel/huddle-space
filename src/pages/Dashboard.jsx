@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Users, Info, Share2, X, Volume2, Mic } from 'lucide-react';
+import { Share2, Users, Info, Volume2, X, Mic } from 'lucide-react';
 import useStore from '../store/useStore';
 import usePeer from '../hooks/usePeer';
-import HuddlePopup from '../components/HuddlePopup';
+import HuddleBar from '../components/HuddlePopup';
 
 export default function Dashboard() {
   const { roomId } = useParams();
@@ -15,18 +15,15 @@ export default function Dashboard() {
   } = usePeer(roomId);
 
   const [showRules, setShowRules] = useState(false);
+  const count = Object.keys(teammates).length;
 
-  /* ── Tap‑to‑talk ─────────────────────────────────────────────────────── */
   const handleTapToTalk = (peerId) => {
     const target = teammates[peerId];
-    if (huddle.active) {
-      alert(`You're already in an active huddle.`);
-      return;
-    }
+    if (huddle.active) { alert("You're already in an active huddle."); return; }
     if (target?.status === 'Available') {
       const huddleId = Date.now().toString();
-      const conn = connectionsRef?.current?.[peerId];
-      if (conn && conn.open) {
+      const conn     = connectionsRef?.current?.[peerId];
+      if (conn?.open) {
         conn.send({ type: 'HUDDLE_INVITE', fromPeerId: peer?.id, fromName: user?.name, huddleId });
       } else {
         broadcast({ type: 'HUDDLE_INVITE', fromPeerId: peer?.id, fromName: user?.name, huddleId, targetPeerId: peerId });
@@ -35,157 +32,152 @@ export default function Dashboard() {
       useStore.getState().setMuted(false);
       startAudio([peerId], false);
     } else {
-      alert(`${target?.name || 'Teammate'} is currently ${target?.status || 'Busy'}.`);
+      alert(`${target?.name || 'Teammate'} is ${target?.status || 'unavailable'}.`);
     }
   };
 
   const copyInvite = () => {
-    const link = window.location.href.replace('/office/', '/room/');
-    navigator.clipboard.writeText(link);
+    navigator.clipboard.writeText(window.location.href.replace('/office/', '/room/'));
     alert('Invite link copied!');
   };
 
-  const allPresent = Object.keys(teammates).length;
-
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', animation: 'fadeIn 0.5s ease-out' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', animation: 'fadeIn 0.4s ease' }}>
 
-      {/* ── Page Header ─────────────────────────────────────────────────── */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="page-header">
-        {/* Back arrow area / office name */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flex: 1 }}>
+        {/* Left: office name + count */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{
-            width: 40, height: 40, borderRadius: '12px',
-            background: 'var(--pc)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 16px var(--pc-glow)', flexShrink: 0,
+            width: 38, height: 38, borderRadius: 10,
+            background: 'var(--blue)', display: 'flex',
+            alignItems: 'center', justifyContent: 'center',
+            boxShadow: '0 4px 14px var(--blue-glow)', flexShrink: 0,
           }}>
-            <Volume2 size={20} color="#fff" />
+            <Volume2 size={18} color="#fff" />
           </div>
           <div>
-            <h1 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--text)', lineHeight: 1.2 }}>
+            <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--text)', lineHeight: 1.2 }}>
               {office?.name || 'Virtual Office'}
-            </h1>
-            <div style={{ display: 'flex', align: 'center', gap: '12px', marginTop: '2px' }}>
-              <span style={{ fontSize: '13px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)', display: 'inline-block' }} />
-                {allPresent + 1} {allPresent + 1 === 1 ? 'person' : 'people'} online
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
+              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-sub)' }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)', display: 'inline-block', boxShadow: '0 0 6px rgba(52,168,83,0.6)' }} />
+                {count + 1} online
               </span>
               {office?.rules && (
-                <span
-                  onClick={() => setShowRules(!showRules)}
-                  style={{ fontSize: '13px', color: 'var(--pc)', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '4px' }}
+                <button
+                  onClick={() => setShowRules(s => !s)}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--blue)', padding: 0 }}
                 >
                   <Info size={13} /> Guidelines
-                </span>
+                </button>
               )}
             </div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-          {/* My own status chip */}
+        {/* Right: my chip + invite */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
           <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '8px 14px 8px 10px',
-            background: 'var(--bg-card)', borderRadius: '30px',
-            border: '1px solid var(--border)',
+            display: 'flex', alignItems: 'center', gap: 10,
+            background: 'rgba(255,255,255,0.05)',
+            border: '1px solid var(--border-hi)',
+            borderRadius: 10, padding: '7px 14px 7px 10px',
           }}>
             <div style={{
-              width: 34, height: 34, borderRadius: '10px',
-              background: user?.avatar?.bg || 'var(--bg-elevated)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18,
+              width: 30, height: 30, borderRadius: 8,
+              background: user?.avatar?.bg ?? 'rgba(255,255,255,0.08)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
             }}>
               {user?.avatar?.icon}
             </div>
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>{user?.name}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: 2 }}>{user?.status}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>{user?.name}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-sub)', marginTop: 1 }}>{user?.status}</div>
             </div>
           </div>
-
-          <button className="btn btn-outline" onClick={copyInvite} style={{ height: 40, borderRadius: '12px', gap: '8px' }}>
-            <Share2 size={15} /> Invite
+          <button className="btn btn-outline" onClick={copyInvite} style={{ height: 40, padding: '0 16px', borderRadius: 10 }}>
+            <Share2 size={14} /> Invite
           </button>
         </div>
       </div>
 
-      {/* ── Guidelines Banner ───────────────────────────────────────────── */}
+      {/* ── Guidelines dropdown ──────────────────────────────────────────── */}
       {showRules && (
         <div style={{
-          margin: '0 40px',
-          marginTop: '20px',
-          background: 'var(--pc-light)',
-          border: '1px solid rgba(66,133,244,0.15)',
-          borderRadius: 16,
-          padding: '20px 24px',
-          position: 'relative',
-          animation: 'fadeIn 0.3s ease',
+          margin: '0 32px', marginTop: 16,
+          background: 'rgba(26,115,232,0.08)',
+          border: '1px solid rgba(26,115,232,0.18)',
+          borderRadius: 14, padding: '18px 22px',
+          position: 'relative', animation: 'fadeIn 0.25s ease',
         }}>
           <button
             onClick={() => setShowRules(false)}
-            style={{ position: 'absolute', top: 16, right: 16, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)' }}
-          >
-            <X size={18} />
-          </button>
-          <h4 style={{ color: 'var(--pc)', marginBottom: 10, fontSize: 14, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Office Guidelines</h4>
-          <p style={{ whiteSpace: 'pre-line', fontSize: 14, color: 'var(--text)', lineHeight: 1.7 }}>{office?.rules}</p>
+            style={{ position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-sub)' }}
+          ><X size={16} /></button>
+          <p style={{ fontSize: 12, fontWeight: 700, color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 8 }}>Office Guidelines</p>
+          <p style={{ fontSize: 14, color: 'var(--text)', lineHeight: 1.7, whiteSpace: 'pre-line' }}>{office?.rules}</p>
         </div>
       )}
 
       {/* ── Presence Grid ────────────────────────────────────────────────── */}
-      <div className="page-content" style={{ paddingTop: '28px' }}>
+      <div className="page-content">
+        {count > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
+            <Users size={14} color="var(--text-sub)" />
+            <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+              Teammates · {count}
+            </span>
+          </div>
+        )}
 
-        {/* Section label */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '20px' }}>
-          <Users size={16} color="var(--text-secondary)" />
-          <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-            Teammates · {allPresent}
-          </span>
-        </div>
-
-        <div className="teammate-grid">
+        <div className="presence-grid">
           {Object.entries(teammates).map(([peerId, data]) => {
-            const inHuddle = huddle.active && huddle.members.includes(peerId);
+            const inHuddle  = huddle.active && huddle.members.includes(peerId);
+            const available = data.status === 'Available';
+            const dotClass  = (data.status ?? 'available').toLowerCase().replace(' ', '-');
+
             return (
               <div
                 key={peerId}
-                className={`teammate-card ${inHuddle ? 'pulse in-huddle' : ''}`}
+                className={`presence-tile ${inHuddle ? 'in-huddle' : ''}`}
                 onClick={() => handleTapToTalk(peerId)}
+                style={{ '--avatar-color': data.avatar?.bg }}
               >
-                {/* Status badge top-right */}
-                <div style={{ position: 'absolute', top: 16, right: 16 }}>
-                  <div className={`status-badge ${data.status?.toLowerCase().replace(' ', '-')}`} />
+                {/* Colour wash */}
+                <div className="tile-bg" />
+
+                {/* Status dot */}
+                <div className={`tile-dot ${dotClass}`} />
+
+                {/* Big avatar */}
+                <div
+                  className="tile-avatar"
+                  style={{ background: data.avatar?.bg ?? 'rgba(255,255,255,0.08)', color: data.avatar?.color ?? '#fff' }}
+                >
+                  {data.avatar?.icon ?? data.name?.[0]}
                 </div>
 
-                {/* Avatar */}
-                <div className="avatar" style={{ backgroundColor: data.avatar?.bg, color: data.avatar?.color }}>
-                  {data.avatar?.icon}
-                </div>
-
-                {/* Name + status */}
-                <div className="teammate-name-label">
-                  <div className="name">{data.name}</div>
-                  <div className="status-chip">{data.status}</div>
-                </div>
-
-                {/* Talk hint */}
-                {data.status === 'Available' && !huddle.active && (
-                  <div className="talk-hint">
-                    <Mic size={11} style={{ display: 'inline', marginRight: 4 }} />
-                    Talk
+                {/* Footer — name + audio wave */}
+                <div className="tile-footer">
+                  <div>
+                    <div className="tile-name">{data.name}</div>
+                    <div className="tile-status-txt">{data.status}</div>
                   </div>
-                )}
+                  {inHuddle && (
+                    <div className="tile-wave">
+                      <span /><span /><span />
+                    </div>
+                  )}
+                </div>
 
-                {/* In huddle waveform badge */}
-                {inHuddle && (
-                  <div style={{
-                    position: 'absolute', bottom: 14, right: 14,
-                    background: 'var(--success)', borderRadius: '20px',
-                    padding: '3px 10px', fontSize: 11, fontWeight: 700, color: '#fff',
-                    display: 'flex', alignItems: 'center', gap: 4,
-                  }}>
-                    <Volume2 size={11} /> Live
+                {/* Tap to talk hover overlay */}
+                {available && !huddle.active && (
+                  <div className="tile-cta">
+                    <div className="tile-cta-pill">
+                      <Mic size={13} /> Talk
+                    </div>
                   </div>
                 )}
               </div>
@@ -193,59 +185,37 @@ export default function Dashboard() {
           })}
 
           {/* Empty state */}
-          {allPresent === 0 && (
-            <div style={{
-              gridColumn: '1 / -1',
-              background: 'var(--bg-card)',
-              border: '2px dashed var(--border)',
-              borderRadius: 24,
-              padding: '80px 40px',
-              textAlign: 'center',
-              color: 'var(--text-secondary)',
-            }}>
+          {count === 0 && (
+            <div className="empty-grid">
               <div style={{
-                width: 64, height: 64, background: 'var(--bg-elevated)',
-                borderRadius: '50%', display: 'flex', alignItems: 'center',
-                justifyContent: 'center', margin: '0 auto 20px',
+                width: 56, height: 56, background: 'rgba(255,255,255,0.04)',
+                borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                <Users size={30} strokeWidth={1.5} color="var(--text-muted)" />
+                <Users size={26} strokeWidth={1.5} color="var(--text-ghost)" />
               </div>
-              <h3 style={{ color: 'var(--text)', marginBottom: 10 }}>You're the only one here</h3>
-              <p style={{ fontSize: 14, marginBottom: 28 }}>Share the invite link to get your team in.</p>
-              <button className="btn btn-outline" onClick={copyInvite} style={{ borderRadius: 12 }}>
-                <Share2 size={15} /> Copy Invite Link
+              <h3>Just you for now</h3>
+              <p>Share the invite link to get your team in.</p>
+              <button className="btn btn-outline" onClick={copyInvite} style={{ marginTop: 8 }}>
+                <Share2 size={14} /> Copy Invite Link
               </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* ── Huddle Popup ────────────────────────────────────────────────── */}
-      <HuddlePopup
+      {/* ── Huddle bottom bar ────────────────────────────────────────────── */}
+      <HuddleBar
         peer={peer} broadcast={broadcast} connectionsRef={connectionsRef}
         startAudio={startAudio} stopAudio={stopAudio} setMicMuted={setMicMuted}
         startScreenShare={startScreenShare} stopScreenShare={stopScreenShare}
         remoteScreenStream={remoteScreenStream}
       />
 
-      {/* Connecting indicator */}
+      {/* Connecting toast */}
       {!isReady && (
-        <div style={{
-          position: 'fixed', bottom: 32, left: 100,
-          padding: '10px 18px',
-          background: 'var(--bg-elevated)',
-          color: 'var(--text-secondary)',
-          borderRadius: 16, fontSize: 13, fontWeight: 500, zIndex: 900,
-          boxShadow: 'var(--shadow-md)',
-          display: 'flex', alignItems: 'center', gap: 10,
-          border: '1px solid var(--border)',
-        }}>
-          <div style={{
-            width: 14, height: 14,
-            border: '2px solid var(--border)', borderTopColor: 'var(--pc)',
-            borderRadius: '50%', animation: 'spin 1s linear infinite',
-          }} />
-          Connecting to workspace...
+        <div className="connecting-toast">
+          <div className="spin-ring" />
+          Connecting to workspace…
         </div>
       )}
     </div>
