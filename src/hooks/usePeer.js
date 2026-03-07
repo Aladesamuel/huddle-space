@@ -158,7 +158,12 @@ export default function usePeer(roomId) {
         }
         break;
       case 'HEARTBEAT':
-        setTeammate(conn.peer, { heartbeat: Date.now() });
+        if (teammatesRef.current[conn.peer]) {
+          setTeammate(conn.peer, { heartbeat: Date.now() });
+        } else {
+          // If we get a heartbeat from someone we don't know, request their presence
+          conn.send({ type: 'REQUEST_SYNC' });
+        }
         break;
       case 'PEER_LIST':
         data.peers.forEach(pid => {
@@ -234,10 +239,12 @@ export default function usePeer(roomId) {
       conn.send({ type: 'REQUEST_SYNC' });
     });
     conn.on('data', d => handleData(conn, d));
-    const cleanup = () => { delete connectionsRef.current[peerId]; removeTeammate(peerId); };
+    // We don't removeTeammate on close immediately to prevent blinking.
+    // The heartbeat timeout (60s) will handle actual dead connections.
+    const cleanup = () => { delete connectionsRef.current[peerId]; };
     conn.on('close', cleanup);
     conn.on('error', cleanup);
-  }, [handleData, removeTeammate]);
+  }, [handleData]);
 
   useEffect(() => { connectToPeerRef.current = connectToPeer; }, [connectToPeer]);
 
@@ -280,15 +287,18 @@ export default function usePeer(roomId) {
     }
   }, [callScreenPeer, broadcast, stopScreenShare]);
 
-  // ─── Ghost cleanup ────────────────────────────────────────────────────────
+  // ─── Pruning & Heartbeat ───────────────────────────────────────────────
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
       Object.entries(teammatesRef.current).forEach(([pid, d]) => {
-        if (d.heartbeat && now - d.heartbeat > 30000) removeTeammate(pid);
+        // Prune after 60 seconds of no activity (more slack for P2P jitter)
+        if (d.heartbeat && now - d.heartbeat > 60000) {
+          removeTeammate(pid);
+        }
       });
       broadcast({ type: 'HEARTBEAT' });
-    }, 15000);
+    }, 10000); // Send heartbeat every 10s
     return () => clearInterval(id);
   }, [removeTeammate, broadcast]);
 
@@ -318,7 +328,8 @@ export default function usePeer(roomId) {
     peer.on('connection', conn => {
       conn.on('open', () => { connectionsRef.current[conn.peer] = conn; });
       conn.on('data', d => handleData(conn, d));
-      conn.on('close', () => { delete connectionsRef.current[conn.peer]; removeTeammate(conn.peer); });
+      conn.on('close', () => { delete connectionsRef.current[conn.peer]; });
+      conn.on('error', () => { delete connectionsRef.current[conn.peer]; });
     });
 
     peer.on('call', call => {
