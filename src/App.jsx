@@ -17,16 +17,16 @@ function Sidebar({ collapsed, setCollapsed }) {
   return (
     <nav className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`}>
 
-      {/* Collapse / expand toggle — replaces the logo */}
+      {/* Collapse button */}
       <button
         className="sidebar-btn sidebar-collapse-btn"
         onClick={() => setCollapsed(c => !c)}
-        title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+        title="Collapse sidebar"
       >
-        {collapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+        <PanelLeftClose size={20} />
       </button>
 
-      {/* Office icon — only when inside an office */}
+      {/* Office icon */}
       {user && inOffice && (
         <button className="sidebar-btn active" title="Office">
           <Users size={20} />
@@ -92,7 +92,38 @@ export default function App() {
     <Router>
       <div className={`app-container${collapsed ? ' sidebar-is-collapsed' : ''}`}>
         <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
-        <main style={{ marginLeft: collapsed ? '0px' : 'var(--sidebar-w)', transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)' }}>
+
+        {/* Floating re-open tab — appears only when sidebar is collapsed */}
+        {collapsed && (
+          <button
+            onClick={() => setCollapsed(false)}
+            title="Expand sidebar"
+            style={{
+              position: 'fixed',
+              top: 14, left: 0,
+              zIndex: 400,
+              background: 'var(--bg-raised)',
+              border: '1px solid var(--border-hi)',
+              borderLeft: 'none',
+              borderRadius: '0 10px 10px 0',
+              width: 32, height: 44,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+              color: 'var(--text-sub)',
+              transition: 'color 0.2s ease, background 0.2s ease',
+              boxShadow: '2px 0 12px rgba(0,0,0,0.3)',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.background = 'var(--bg-hover)'; }}
+            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-sub)'; e.currentTarget.style.background = 'var(--bg-raised)'; }}
+          >
+            <PanelLeftOpen size={16} />
+          </button>
+        )}
+
+        <main style={{
+          marginLeft: collapsed ? '0px' : 'var(--sidebar-w)',
+          transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)',
+        }}>
           <Routes>
             <Route path="/"             element={<Home />} />
             <Route path="/room/:roomId" element={<Onboarding />} />

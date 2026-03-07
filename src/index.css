@@ -273,6 +273,16 @@ textarea.form-input { resize: vertical; }
   z-index: 1;
 }
 
+.tile-role {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-ghost);
+  text-align: center;
+  z-index: 1;
+  margin-top: -2px;
+  margin-bottom: 2px;
+}
+
 /* Status row — dot + label */
 .tile-status-row {
   display: flex;
@@ -374,6 +384,11 @@ textarea.form-input { resize: vertical; }
   gap: 24px;
   z-index: 500;
   animation: bar-slide-up 0.45s cubic-bezier(0.16,1,0.3,1);
+  transition: left 0.3s cubic-bezier(0.4,0,0.2,1);
+}
+
+.sidebar-is-collapsed .huddle-bar {
+  left: 0;
 }
 @keyframes bar-slide-up {
   from { transform: translateY(100%); opacity: 0; }

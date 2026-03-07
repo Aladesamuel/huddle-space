@@ -167,6 +167,9 @@ export default function Dashboard() {
                 {/* Name */}
                 <div className="tile-name">{data.name}</div>
 
+                {/* Role & Seniority */}
+                {data.role && <div className="tile-role">{data.role}</div>}
+
                 {/* Status */}
                 <div className="tile-status-row">
                   <div className={`tile-status-dot ${(data.status ?? 'available').toLowerCase().replace(' ', '-')}`} />

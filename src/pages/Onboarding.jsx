@@ -31,6 +31,7 @@ export default function Onboarding() {
 
   const [userName,   setUserName]   = useState('');
   const [userEmail,  setUserEmail]  = useState('');
+  const [role,       setRole]       = useState('');
   const [password,   setPassword]   = useState('');
   const [avatar,     setAvatar]     = useState(AVATARS[0]);
   const [error,      setError]      = useState('');
@@ -43,7 +44,7 @@ export default function Onboarding() {
     if (officeData?.p && btoa(password) !== officeData.h) {
       setError('Incorrect password.'); return;
     }
-    setUser({ id: Math.random().toString(36).slice(2, 9), name: userName, email: userEmail, avatar, status: 'Available' });
+    setUser({ id: Math.random().toString(36).slice(2, 9), name: userName, email: userEmail, role: role.trim(), avatar, status: 'Available' });
     setOffice({ name: officeData?.n ?? 'Virtual Office', rules: officeData?.r, id: roomId, p: officeData?.p, h: officeData?.h });
     navigate(`/office/${roomId}`);
   };
@@ -105,6 +106,20 @@ export default function Onboarding() {
             <div className="form-group">
               <label><Mail size={12} /> Work Email</label>
               <input className="form-input" type="email" placeholder="sarah@company.com" value={userEmail} onChange={e => setUserEmail(e.target.value)} required />
+            </div>
+
+            <div className="form-group">
+              <label>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                Role &amp; Seniority
+                <span style={{ fontWeight: 400, textTransform: 'none', letterSpacing: 0, color: 'var(--text-ghost)', fontSize: 12, marginLeft: 4 }}>optional</span>
+              </label>
+              <input
+                className="form-input"
+                placeholder="e.g. Senior Developer, Junior Designer, Manager…"
+                value={role}
+                onChange={e => setRole(e.target.value)}
+              />
             </div>
 
             <div className="form-group" style={{ marginBottom: 24 }}>
