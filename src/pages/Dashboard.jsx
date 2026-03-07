@@ -8,7 +8,7 @@ import HuddlePopup from '../components/HuddlePopup';
 export default function Dashboard() {
   const { roomId } = useParams();
   const { user, office, teammates, joinHuddle, huddle } = useStore();
-  const { isReady, broadcast, peer, connectionsRef } = usePeer(roomId);
+  const { isReady, broadcast, peer, connectionsRef, startAudio, stopAudio, setMicMuted } = usePeer(roomId);
   const [showRules, setShowRules] = useState(false);
 
   const handleTapToTalk = (peerId) => {
@@ -25,9 +25,10 @@ export default function Dashboard() {
       } else {
         broadcast({ type: 'HUDDLE_INVITE', fromPeerId: peer?.id, fromName: user?.name, huddleId, targetPeerId: peerId });
       }
-      // Initiator joins UNMUTED — they can talk immediately
+      // Initiator joins UNMUTED — mic opens immediately
       joinHuddle([peerId]);
       useStore.getState().setMuted(false);
+      startAudio([peerId], false); // false = not muted (initiator speaks right away)
     } else {
       alert(`${target?.name || 'Teammate'} is currently ${target?.status || 'Busy'}.`);
     }
@@ -106,7 +107,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <HuddlePopup peer={peer} broadcast={broadcast} connectionsRef={connectionsRef} />
+      <HuddlePopup peer={peer} broadcast={broadcast} connectionsRef={connectionsRef} startAudio={startAudio} stopAudio={stopAudio} setMicMuted={setMicMuted} />
       
       {!isReady && (
         <div style={{ 
