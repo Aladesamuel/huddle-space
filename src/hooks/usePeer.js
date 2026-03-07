@@ -168,6 +168,9 @@ export default function usePeer(roomId) {
     const currentUser = userRef.current;
     switch (data.type) {
       case 'PRESENCE':
+        // Don't add yourself to your own teammates list
+        if (data.profile.email === currentUser?.email) return;
+        
         // Update local teammate state (the Store now handles anti-ghosting by email)
         setTeammate(conn.peer, { ...data.profile, status: data.status });
         // If it's an initial presence, send ours back immediately

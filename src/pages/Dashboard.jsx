@@ -136,7 +136,9 @@ export default function Dashboard() {
               </span>
             </div>
             <div className="presence-grid">
-              {Object.entries(teammates).map(([peerId, data]) => {
+              {Object.entries(teammates)
+                .filter(([_, data]) => data.email !== user?.email)
+                .map(([peerId, data]) => {
                 const inHuddle  = huddle.active && huddle.members.includes(peerId);
                 const available = data.status === 'Available';
                 return (
