@@ -180,9 +180,11 @@ export default function usePeer(roomId) {
       case 'HUDDLE_INVITE': {
         const store = useStore.getState();
         if (store.huddle.active) {
+          // If already in a huddle, just add this person and call them
           store.addHuddleMember(data.fromPeerId);
           callAudioPeer(data.fromPeerId);
         } else {
+          // Receiver joins: must include the person who invited them so the UI shows 'Huddle · 2 people'
           store.joinHuddle([data.fromPeerId]);
           store.setMuted(true);
         }
@@ -191,22 +193,19 @@ export default function usePeer(roomId) {
       }
       case 'HUDDLE_ACCEPT': {
         const store = useStore.getState();
-        if (store.huddle.active) {
-          store.addHuddleMember(data.fromPeerId);
-          callAudioPeer(data.fromPeerId);
-        } else {
-          store.joinHuddle([conn.peer]);
-        }
+        // The initiator's huddle already has the target from handleTapToTalk, 
+        // but let's ensure they are added if not already.
+        store.addHuddleMember(data.fromPeerId);
+        
+        // Broadcast to everyone else in the office that a huddle has been formed/joined
         broadcast({ type: 'HUDDLE_JOIN', newPeerId: data.fromPeerId });
         break;
       }
       case 'HUDDLE_JOIN': {
         const store = useStore.getState();
-        if (store.huddle.active) {
+        // If I am in the huddle mentioned, or I am the one joining, update members
+        if (store.huddle.active && (store.huddle.members.includes(data.newPeerId) || data.newPeerId === peerRef.current?.id)) {
           store.addHuddleMember(data.newPeerId);
-          if (store.huddle.isSharing && store.huddle.streamerId === peerRef.current?.id) {
-            callScreenPeer(data.newPeerId);
-          }
         }
         break;
       }
