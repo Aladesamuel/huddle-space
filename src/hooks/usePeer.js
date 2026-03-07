@@ -124,7 +124,7 @@ export default function usePeer(roomId) {
   }, [handleData, removeTeammate]); // Stable dependencies
 
   useEffect(() => {
-    if (!roomId) return;
+    if (!roomId || !user) return; // Wait for user to be ready
 
     const seedId = `${SEED_PREFIX}${roomId}`;
     const myId = `${PEER_PREFIX}${roomId}-${uuidv4().slice(0, 8)}`;
@@ -132,7 +132,8 @@ export default function usePeer(roomId) {
     const peer = new Peer(myId); 
     peerRef.current = peer;
 
-    peer.on('open', () => {
+    peer.on('open', (id) => {
+      console.log('Peer open:', id);
       setIsReady(true);
       connectToPeer(seedId);
     });
@@ -169,7 +170,7 @@ export default function usePeer(roomId) {
         peerRef.current = null;
       }
     };
-  }, [roomId]); // ONLY restart when the ROOM changes
+  }, [roomId, user]); // Include user to re-run when profile is ready
 
   // Sync status changes
   useEffect(() => {
@@ -180,7 +181,7 @@ export default function usePeer(roomId) {
         status: user.status
       });
     }
-  }, [user?.status, isReady, broadcast, user]);
+  }, [user?.status, isReady, broadcast]);
 
   return { peer: peerRef.current, isReady, broadcast };
 }

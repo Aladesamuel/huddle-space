@@ -21,13 +21,23 @@ function App() {
               <select 
                 value={user.status} 
                 onChange={(e) => useStore.getState().updateStatus(e.target.value)}
-                style={{ padding: '4px 8px', borderRadius: '4px', border: '1px solid #dadce0' }}
+                style={{ padding: '4px 12px', borderRadius: '4px', border: '1px solid #dadce0', fontSize: '13px', backgroundColor: '#f8f9fa' }}
               >
                 <option value="Available">🟢 Available</option>
                 <option value="Busy">🔴 Busy</option>
                 <option value="On Break">🟡 On Break</option>
               </select>
-              <div style={{ fontWeight: 500, fontSize: '14px' }}>{user.name}</div>
+              <div style={{ fontWeight: 500, fontSize: '14px', color: '#3c4043' }}>{user.name}</div>
+              <button 
+                onClick={() => {
+                  useStore.getState().setUser(null);
+                  window.location.href = '/';
+                }}
+                className="btn btn-outline"
+                style={{ padding: '4px 12px', fontSize: '12px' }}
+              >
+                Exit Office
+              </button>
             </div>
           )}
         </header>
