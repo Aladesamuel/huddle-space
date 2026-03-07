@@ -7,7 +7,7 @@ import useStore from './store/useStore';
 import './index.css';
 
 function App() {
-  const { user, office } = useStore();
+  const { user } = useStore();
 
   return (
     <Router>

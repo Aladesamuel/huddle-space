@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { User, Shield, Check } from 'lucide-react';
+import { Shield, Check } from 'lucide-react';
 import useStore from '../store/useStore';
 
 const AVATARS = [
@@ -66,20 +66,20 @@ export default function Onboarding() {
     navigate(`/office/${roomId}`);
   };
 
-  if (!officeData && !error) return <div style={{ textAlign: 'center', marginTop: '60px' }}>Loading office details...</div>;
+  if (!officeData && !activeError) return <div style={{ textAlign: 'center', marginTop: '60px' }}>Loading office details...</div>;
 
   return (
     <div style={{ maxWidth: '500px', margin: '40px auto' }}>
       <div style={{ textAlign: 'center', marginBottom: '32px' }}>
         <h2 style={{ fontSize: '24px', fontWeight: 500, color: '#3c4043' }}>
-          {error ? 'Oops!' : `Join ${officeData?.n}`}
+          {activeError ? 'Oops!' : `Join ${officeData?.n}`}
         </h2>
         <p style={{ color: '#70757a', marginTop: '8px' }}>
-          {error ? error : "Set up your professional profile to enter the office."}
+          {activeError ? activeError : "Set up your professional profile to enter the office."}
         </p>
       </div>
 
-      {!error && (
+      {!activeError && (
         <form className="card" onSubmit={handleJoin}>
           {officeData?.p && (
             <div className="form-group">
@@ -162,7 +162,7 @@ export default function Onboarding() {
         </form>
       )}
 
-      {error && (
+      {activeError && (
         <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => navigate('/')}>
           Return Home
         </button>

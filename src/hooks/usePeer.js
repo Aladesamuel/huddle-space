@@ -7,19 +7,16 @@ const SEED_PREFIX = 'hs-seed-';
 const PEER_PREFIX = 'hs-peer-';
 
 export default function usePeer(roomId) {
-  const { 
-    user, teammates, setTeammate, removeTeammate,
-    joinHuddle, addHuddleMember, leaveHuddle, huddle,
-    setHuddleInvite, setSharing, setMuted
-  } = useStore();
+  const { user, teammates, setTeammate, removeTeammate } = useStore();
   const peerRef = useRef(null);
   const connectionsRef = useRef({}); // { peerId: DataConnection }
   const [isReady, setIsReady] = useState(false);
+  const [activePeer, setActivePeer] = useState(null);
 
   // Use refs to access latest state in callbacks without triggering re-renders
   const userRef = useRef(user);
   const teammatesRef = useRef(teammates);
-  
+
   useEffect(() => {
     userRef.current = user;
     teammatesRef.current = teammates;
@@ -33,6 +30,9 @@ export default function usePeer(roomId) {
       }
     });
   }, []);
+
+  // Forward-ref so handleData can call connectToPeer before it is declared
+  const connectToPeerRef = useRef(null);
 
   // Handle incoming data
   const handleData = useCallback((conn, data) => {
@@ -67,7 +67,8 @@ export default function usePeer(roomId) {
       case 'PEER_LIST':
         data.peers.forEach((peerId) => {
           if (peerId !== peerRef.current?.id && !connectionsRef.current[peerId]) {
-            connectToPeer(peerId);
+            // Use the ref to avoid circular dependency
+            connectToPeerRef.current?.(peerId);
           }
         });
         break;
@@ -78,53 +79,44 @@ export default function usePeer(roomId) {
         });
         break;
 
-      // ──── HUDDLE SIGNALING ────
+      // ──── HUDDLE SIGNALING (all via store.getState() — no deps needed) ────
       case 'HUDDLE_INVITE': {
-        // Someone wants to start a huddle with us
-        const { fromPeerId, fromName, huddleId } = data;
+        // Someone tapped us — auto-join muted, no confirmation needed
         const store = useStore.getState();
+        const { fromPeerId, fromName, huddleId } = data;
         if (store.huddle.active) {
-          // Already in a huddle – auto-add sender as a new member
           store.addHuddleMember(fromPeerId);
-          // Confirm back that we accepted
-          conn.send({ type: 'HUDDLE_ACCEPT', fromPeerId: peerRef.current?.id, huddleId });
         } else {
-          // Show invite popup to this user
-          store.setHuddleInvite({ fromPeerId, fromName, huddleId, conn });
+          // Auto-join muted so the person tapping can start talking right away
+          store.joinHuddle([fromPeerId]);
+          store.setMuted(true);  // receiver starts muted, unmutes when ready
         }
+        // Confirm back so the initiator's huddle popup also shows this member
+        conn.send({ type: 'HUDDLE_ACCEPT', fromPeerId: peerRef.current?.id, huddleId });
         break;
       }
       case 'HUDDLE_ACCEPT': {
-        // Someone accepted our invite (or was added)
         const store = useStore.getState();
-        const { fromPeerId, huddleId } = data;
+        const { fromPeerId } = data;
         if (store.huddle.active) {
           store.addHuddleMember(fromPeerId);
         } else {
-          // We were the initiator – start the huddle
-          store.joinHuddle([conn.peer, fromPeerId]);
+          store.joinHuddle([conn.peer]);
         }
-        // Tell everyone else in the huddle a new person joined
-        broadcast({ type: 'HUDDLE_JOIN', newPeerId: fromPeerId, huddleId });
+        // Propagate the new member to everyone else in the huddle
+        broadcast({ type: 'HUDDLE_JOIN', newPeerId: fromPeerId });
         break;
       }
       case 'HUDDLE_JOIN': {
-        // A peer was added to the huddle by somebody else – update our view
         const store = useStore.getState();
-        if (store.huddle.active) {
-          store.addHuddleMember(data.newPeerId);
-        }
+        if (store.huddle.active) store.addHuddleMember(data.newPeerId);
         break;
       }
       case 'HUDDLE_LEAVE': {
-        // A peer left the huddle
         const store = useStore.getState();
         const remaining = store.huddle.members.filter(id => id !== conn.peer);
-        if (remaining.length === 0) {
-          store.leaveHuddle();
-        } else {
-          store.joinHuddle(remaining);
-        }
+        if (remaining.length === 0) store.leaveHuddle();
+        else store.joinHuddle(remaining);
         break;
       }
       case 'SHARING_STARTED': {
@@ -140,7 +132,7 @@ export default function usePeer(roomId) {
       default:
         console.log('Update:', data.type);
     }
-  }, [setTeammate, removeTeammate]);
+  }, [setTeammate, removeTeammate, broadcast]);
 
   // Ghost Lifecycle Cleanup
   useEffect(() => {
@@ -162,7 +154,7 @@ export default function usePeer(roomId) {
 
     const conn = peerRef.current.connect(peerId);
     if (!conn) return;
-    
+
     connectionsRef.current[peerId] = conn;
 
     conn.on('open', () => {
@@ -186,17 +178,23 @@ export default function usePeer(roomId) {
     });
   }, [handleData, removeTeammate]);
 
+  // Keep the ref in sync with the latest memoized callback
+  useEffect(() => {
+    connectToPeerRef.current = connectToPeer;
+  }, [connectToPeer]);
+
   useEffect(() => {
     if (!roomId || !user?.id) return;
 
     const seedId = `${SEED_PREFIX}${roomId}`;
     const myId = `${PEER_PREFIX}${roomId}-${uuidv4().slice(0, 8)}`;
-    
-    const peer = new Peer(myId); 
+
+    const peer = new Peer(myId);
     peerRef.current = peer;
 
-    peer.on('open', (id) => {
+    peer.on('open', () => {
       setIsReady(true);
+      setActivePeer(peer);
       connectToPeer(seedId);
     });
 
@@ -230,10 +228,11 @@ export default function usePeer(roomId) {
       if (peerRef.current) {
         peerRef.current.destroy();
         peerRef.current = null;
+        setActivePeer(null);
         connectionsRef.current = {};
       }
     };
-  }, [roomId, user?.id]); // Only restart when Room or User ID changes
+  }, [roomId, user?.id, connectToPeer, handleData]); // Proper deps
 
   // Sync status changes
   useEffect(() => {
@@ -246,5 +245,5 @@ export default function usePeer(roomId) {
     }
   }, [user?.status, isReady, broadcast]);
 
-  return { peer: peerRef.current, isReady, broadcast, connectionsRef };
+  return { peer: activePeer, isReady, broadcast, connectionsRef };
 }

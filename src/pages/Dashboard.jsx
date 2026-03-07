@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Users, Info, Share2 } from 'lucide-react';
-import { v4 as uuidv4 } from 'uuid';
 import useStore from '../store/useStore';
 import usePeer from '../hooks/usePeer';
 import HuddlePopup from '../components/HuddlePopup';
@@ -15,21 +14,20 @@ export default function Dashboard() {
   const handleTapToTalk = (peerId) => {
     const target = teammates[peerId];
     if (huddle.active) {
-      alert(`${target?.name || 'Teammate'} is already in the huddle or invite sent.`);
+      alert(`You're already in an active huddle.`);
       return;
     }
     if (target?.status === 'Available') {
-      const huddleId = uuidv4().slice(0, 8);
-      // Tell the target peer we want to huddle
+      const huddleId = Date.now().toString();
       const conn = connectionsRef?.current?.[peerId];
       if (conn && conn.open) {
         conn.send({ type: 'HUDDLE_INVITE', fromPeerId: peer?.id, fromName: user?.name, huddleId });
       } else {
-        // Fallback: broadcast to all (target will self-identify)
         broadcast({ type: 'HUDDLE_INVITE', fromPeerId: peer?.id, fromName: user?.name, huddleId, targetPeerId: peerId });
       }
-      // Optimistically open huddle on our end
+      // Initiator joins UNMUTED — they can talk immediately
       joinHuddle([peerId]);
+      useStore.getState().setMuted(false);
     } else {
       alert(`${target?.name || 'Teammate'} is currently ${target?.status || 'Busy'}.`);
     }
