@@ -132,12 +132,12 @@ export default function Dashboard() {
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
               <Users size={14} color="var(--text-sub)" />
               <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                Teammates · {Object.keys(teammates).filter(id => id !== peer?.id).length}
+                Teammates · {Object.values(teammates).filter(d => d.email !== user?.email).length}
               </span>
             </div>
             <div className="presence-grid">
               {Object.entries(teammates)
-                .filter(([pid]) => pid !== peer?.id)
+                .filter(([_, data]) => data.email !== user?.email)
                 .map(([peerId, data]) => {
                 const inHuddle  = huddle.active && huddle.members.includes(peerId);
                 const available = data.status === 'Available';
