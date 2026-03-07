@@ -16,10 +16,28 @@ const useStore = create(
       setOffice: (office) => set({ office }),
 
       // Teammates in the room
-      teammates: {}, // { peerId: { name, avatar, status, lastSeen } }
-      setTeammate: (peerId, data) => set((state) => ({
-        teammates: { ...state.teammates, [peerId]: { ...state.teammates[peerId], ...data, lastSeen: Date.now() } }
-      })),
+      teammates: {}, // { peerId: { name, email, avatar, status, lastSeen } }
+      setTeammate: (peerId, data) => set((state) => {
+        const newTeammates = { ...state.teammates };
+        
+        // ANTI-GHOSTING: If this update has an email, ensure no other peerId uses it
+        const incomingEmail = data.email || newTeammates[peerId]?.email;
+        if (incomingEmail) {
+          Object.keys(newTeammates).forEach(pid => {
+            if (pid !== peerId && newTeammates[pid]?.email === incomingEmail) {
+              delete newTeammates[pid];
+            }
+          });
+        }
+
+        newTeammates[peerId] = { 
+          ...newTeammates[peerId], 
+          ...data, 
+          lastSeen: Date.now() 
+        };
+        
+        return { teammates: newTeammates };
+      }),
       removeTeammate: (peerId) => set((state) => {
         const newTeammates = { ...state.teammates };
         delete newTeammates[peerId];

@@ -168,8 +168,8 @@ export default function usePeer(roomId) {
     const currentUser = userRef.current;
     switch (data.type) {
       case 'PRESENCE':
-        // Update local teammate state and heartbeat
-        setTeammate(conn.peer, { ...data.profile, status: data.status, heartbeat: Date.now() });
+        // Update local teammate state (the Store now handles anti-ghosting by email)
+        setTeammate(conn.peer, { ...data.profile, status: data.status });
         // If it's an initial presence, send ours back immediately
         if (data.isInitial) {
           conn.send({ type: 'PRESENCE', profile: currentUser, status: currentUser?.status || 'Available', isInitial: false });
@@ -278,7 +278,7 @@ export default function usePeer(roomId) {
           if (!connectionsRef.current[peerId]) {
             removeTeammate(peerId);
           }
-        }, 1000);
+        }, 500);
       }
     };
 
@@ -409,7 +409,7 @@ export default function usePeer(roomId) {
           delete connectionsRef.current[conn.peer];
           setTimeout(() => {
             if (!connectionsRef.current[conn.peer]) removeTeammate(conn.peer);
-          }, 1000);
+          }, 500);
         }
       });
       conn.on('error', () => {
