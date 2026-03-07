@@ -67,9 +67,11 @@ export default function usePeer(roomId) {
     } catch (e) { console.error('Failed to answer audio call:', e); }
   }, []);
 
-  // ─── Answer SCREEN SHARE call (no stream needed from viewer) ────────────
+  // ─── Answer SCREEN SHARE call ───────────────────────────────────────────
   const answerScreenCall = useCallback((call) => {
-    call.answer(); // viewer sends nothing back
+    // Some strict browsers require a stream to establish the RTCPeerConnection 
+    // even if it's 1-way. We can just send our audio stream back safely.
+    call.answer(localStreamRef.current || undefined);
     screenCallsRef.current[call.peer] = call;
     call.on('stream', remote => {
       setRemoteScreenStream(remote);
@@ -229,7 +231,13 @@ export default function usePeer(roomId) {
       }
       case 'HUDDLE_JOIN': {
         const store = useStore.getState();
-        if (store.huddle.active) store.addHuddleMember(data.newPeerId);
+        if (store.huddle.active) {
+          store.addHuddleMember(data.newPeerId);
+          // If I am currently sharing my screen, call the new person so they see it!
+          if (store.huddle.isSharing && store.huddle.streamerId === peerRef.current?.id) {
+            callScreenPeer(data.newPeerId);
+          }
+        }
         break;
       }
       case 'HUDDLE_LEAVE': {

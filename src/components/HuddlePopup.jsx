@@ -15,17 +15,6 @@ export default function HuddlePopup({
   const [showAddMenu, setShowAddMenu]   = useState(false);
   const [screenFull,  setScreenFull]    = useState(false);
   const audioStartedRef = useRef(false);
-  const videoRef        = useRef(null);
-
-  // ─── Attach remote screen stream to <video> element ─────────────────────
-  useEffect(() => {
-    if (videoRef.current && remoteScreenStream) {
-      videoRef.current.srcObject = remoteScreenStream;
-    }
-    if (!remoteScreenStream && videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  }, [remoteScreenStream]);
 
   // ─── Start audio when huddle activates ────────────────────────────────────
   useEffect(() => {
@@ -91,17 +80,26 @@ export default function HuddlePopup({
           transform: screenFull ? 'none' : 'translateX(-50%)',
           width:  screenFull ? '100vw' : 'min(900px, 90vw)',
           height: screenFull ? '100vh' : 'auto',
+          aspectRatio: screenFull ? 'auto' : '16/9',
+          maxHeight: screenFull ? '100vh' : '70vh',
           zIndex: 900,
           background: '#000',
           borderRadius: screenFull ? 0 : '12px',
           overflow: 'hidden',
           boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+          display: 'flex',
+          flexDirection: 'column'
         }}>
           <video
-            ref={videoRef}
+            ref={el => {
+              if (el && el.srcObject !== remoteScreenStream) {
+                el.srcObject = remoteScreenStream;
+              }
+            }}
             autoPlay
             playsInline
-            style={{ width: '100%', height: '100%', objectFit: 'contain', display: 'block' }}
+            muted
+            style={{ width: '100%', flex: 1, backgroundColor: '#000', objectFit: 'contain', display: 'block' }}
           />
           {/* Header bar */}
           <div style={{
