@@ -6,8 +6,8 @@ import useStore from '../store/useStore';
 const SEED_PREFIX = 'hs-seed-';
 const PEER_PREFIX = 'hs-peer-';
 
-// ─── Helpers to create/remove audio elements ─────────────────────────────────
-function playRemoteStream(peerId, stream) {
+// ─── DOM Audio helpers ────────────────────────────────────────────────────────
+function playRemoteAudio(peerId, stream) {
   let el = document.getElementById(`hs-audio-${peerId}`);
   if (!el) {
     el = document.createElement('audio');
@@ -18,108 +18,159 @@ function playRemoteStream(peerId, stream) {
   }
   el.srcObject = stream;
 }
-
-function removeRemoteStream(peerId) {
+function removeRemoteAudio(peerId) {
   const el = document.getElementById(`hs-audio-${peerId}`);
   if (el) { el.srcObject = null; el.remove(); }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-
 export default function usePeer(roomId) {
   const { user, teammates, setTeammate, removeTeammate } = useStore();
-  const peerRef        = useRef(null);
-  const connectionsRef = useRef({});   // { peerId: DataConnection }
-  const callsRef       = useRef({});   // { peerId: MediaConnection }
-  const localStreamRef = useRef(null); // Our live mic stream
 
-  const [isReady, setIsReady]     = useState(false);
+  const peerRef             = useRef(null);
+  const connectionsRef      = useRef({});   // { peerId: DataConnection }
+  const audioCallsRef       = useRef({});   // { peerId: MediaConnection (audio) }
+  const screenCallsRef      = useRef({});   // { peerId: MediaConnection (screen) }
+  const localStreamRef      = useRef(null); // local mic stream
+  const localScreenRef      = useRef(null); // local screen stream
+
+  const [isReady,    setIsReady]    = useState(false);
   const [activePeer, setActivePeer] = useState(null);
+  // Remote screen stream (shown in all viewers)
+  const [remoteScreenStream, setRemoteScreenStream] = useState(null);
 
-  // Refs to latest state (used inside stable callbacks)
   const userRef      = useRef(user);
   const teammatesRef = useRef(teammates);
-  useEffect(() => { userRef.current = user; }, [user]);
+  useEffect(() => { userRef.current = user; },      [user]);
   useEffect(() => { teammatesRef.current = teammates; }, [teammates]);
 
-  // ─── Broadcast a message to all data connections ───────────────────────
+  // ─── Broadcast ──────────────────────────────────────────────────────────
   const broadcast = useCallback((data) => {
     Object.values(connectionsRef.current).forEach(conn => {
       if (conn.open) conn.send(data);
     });
   }, []);
 
-  // ─── Answer an incoming audio call ───────────────────────────────────────
-  const answerCall = useCallback(async (call) => {
+  // ─── Answer AUDIO call ───────────────────────────────────────────────────
+  const answerAudioCall = useCallback(async (call) => {
     try {
-      // If we already have a local stream (huddle already active), reuse it
       let stream = localStreamRef.current;
       if (!stream) {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         localStreamRef.current = stream;
       }
       call.answer(stream);
-      callsRef.current[call.peer] = call;
-      call.on('stream', remoteStream => playRemoteStream(call.peer, remoteStream));
-      call.on('close',  () => { delete callsRef.current[call.peer]; removeRemoteStream(call.peer); });
-      call.on('error',  () => { delete callsRef.current[call.peer]; removeRemoteStream(call.peer); });
-    } catch (e) {
-      console.error('Failed to answer call:', e);
-    }
+      audioCallsRef.current[call.peer] = call;
+      call.on('stream', remote => playRemoteAudio(call.peer, remote));
+      call.on('close',  () => { delete audioCallsRef.current[call.peer]; removeRemoteAudio(call.peer); });
+      call.on('error',  () => { delete audioCallsRef.current[call.peer]; removeRemoteAudio(call.peer); });
+    } catch (e) { console.error('Failed to answer audio call:', e); }
   }, []);
 
-  // ─── Start a MediaConnection audio call to one peer ─────────────────────
-  const callPeer = useCallback((peerId) => {
-    if (!peerRef.current || callsRef.current[peerId] || !localStreamRef.current) return;
-    const call = peerRef.current.call(peerId, localStreamRef.current);
+  // ─── Answer SCREEN SHARE call (no stream needed from viewer) ────────────
+  const answerScreenCall = useCallback((call) => {
+    call.answer(); // viewer sends nothing back
+    screenCallsRef.current[call.peer] = call;
+    call.on('stream', remote => {
+      setRemoteScreenStream(remote);
+      useStore.getState().setSharing(true, call.peer);
+    });
+    call.on('close', () => {
+      delete screenCallsRef.current[call.peer];
+      setRemoteScreenStream(null);
+      useStore.getState().setSharing(false, null);
+    });
+    call.on('error', () => {
+      delete screenCallsRef.current[call.peer];
+      setRemoteScreenStream(null);
+      useStore.getState().setSharing(false, null);
+    });
+  }, []);
+
+  // ─── Call a peer with audio ──────────────────────────────────────────────
+  const callAudioPeer = useCallback((peerId) => {
+    if (!peerRef.current || audioCallsRef.current[peerId] || !localStreamRef.current) return;
+    const call = peerRef.current.call(peerId, localStreamRef.current, { metadata: { type: 'audio' } });
     if (!call) return;
-    callsRef.current[peerId] = call;
-    call.on('stream', remoteStream => playRemoteStream(peerId, remoteStream));
-    call.on('close',  () => { delete callsRef.current[peerId]; removeRemoteStream(peerId); });
-    call.on('error',  () => { delete callsRef.current[peerId]; removeRemoteStream(peerId); });
+    audioCallsRef.current[peerId] = call;
+    call.on('stream', remote => playRemoteAudio(peerId, remote));
+    call.on('close',  () => { delete audioCallsRef.current[peerId]; removeRemoteAudio(peerId); });
+    call.on('error',  () => { delete audioCallsRef.current[peerId]; removeRemoteAudio(peerId); });
   }, []);
 
-  // ─── Public: start mic + call all huddle members ─────────────────────────
+  // ─── Call a peer with screen ─────────────────────────────────────────────
+  const callScreenPeer = useCallback((peerId) => {
+    if (!peerRef.current || screenCallsRef.current[peerId] || !localScreenRef.current) return;
+    const call = peerRef.current.call(peerId, localScreenRef.current, { metadata: { type: 'screen' } });
+    if (!call) return;
+    screenCallsRef.current[peerId] = call;
+    call.on('close', () => delete screenCallsRef.current[peerId]);
+    call.on('error', () => delete screenCallsRef.current[peerId]);
+  }, []);
+
+  // ─── Public: Start mic + audio-call all huddle members ──────────────────
   const startAudio = useCallback(async (memberPeerIds, startMuted = false) => {
     try {
-      // Stop any previous stream first
-      if (localStreamRef.current) {
-        localStreamRef.current.getTracks().forEach(t => t.stop());
-      }
+      if (localStreamRef.current) localStreamRef.current.getTracks().forEach(t => t.stop());
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       stream.getAudioTracks().forEach(t => { t.enabled = !startMuted; });
       localStreamRef.current = stream;
+      memberPeerIds.forEach(pid => callAudioPeer(pid));
+    } catch (e) { console.error('Mic access denied:', e); }
+  }, [callAudioPeer]);
 
-      // Call every member peer
-      memberPeerIds.forEach(peerId => callPeer(peerId));
-    } catch (e) {
-      console.error('Mic access denied:', e);
-    }
-  }, [callPeer]);
-
-  // ─── Public: stop all audio ───────────────────────────────────────────────
+  // ─── Public: Stop all audio ──────────────────────────────────────────────
   const stopAudio = useCallback(() => {
-    // Hang up all calls
-    Object.values(callsRef.current).forEach(call => call.close());
-    callsRef.current = {};
-    // Stop local mic
-    if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach(t => t.stop());
-      localStreamRef.current = null;
-    }
-    // Remove all remote audio elements
+    Object.values(audioCallsRef.current).forEach(c => c.close());
+    audioCallsRef.current = {};
+    localStreamRef.current?.getTracks().forEach(t => t.stop());
+    localStreamRef.current = null;
     document.querySelectorAll('[id^="hs-audio-"]').forEach(el => { el.srcObject = null; el.remove(); });
   }, []);
 
-  // ─── Public: toggle local mic mute ────────────────────────────────────────
+  // ─── Public: Toggle mic mute ─────────────────────────────────────────────
   const setMicMuted = useCallback((muted) => {
-    if (localStreamRef.current) {
-      localStreamRef.current.getAudioTracks().forEach(t => { t.enabled = !muted; });
-    }
+    localStreamRef.current?.getAudioTracks().forEach(t => { t.enabled = !muted; });
     useStore.getState().setMuted(muted);
   }, []);
 
-  // ─── Forward-ref to break circular dependency handleData ↔ connectToPeer ─
+  // ─── Public: Start screen share → call all huddle members ────────────────
+  const startScreenShare = useCallback(async (memberPeerIds) => {
+    if (!peerRef.current) return false;
+    try {
+      const stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: false });
+      localScreenRef.current = stream;
+
+      // Call every huddle member with our screen
+      memberPeerIds.forEach(pid => callScreenPeer(pid));
+
+      // Update store + broadcast signal so non-huddle viewers also know
+      const myId = peerRef.current.id;
+      useStore.getState().setSharing(true, myId);
+      broadcast({ type: 'SHARING_STARTED', peerId: myId, name: userRef.current?.name });
+
+      // Browser's native "Stop sharing" button
+      stream.getVideoTracks()[0].onended = () => stopScreenShare();
+
+      return true;
+    } catch (e) {
+      console.error('Screen share cancelled or denied:', e);
+      return false;
+    }
+  }, [callScreenPeer, broadcast, stopScreenShare]);
+
+  // ─── Public: Stop screen share ────────────────────────────────────────────
+  const stopScreenShare = useCallback(() => {
+    localScreenRef.current?.getTracks().forEach(t => t.stop());
+    localScreenRef.current = null;
+    Object.values(screenCallsRef.current).forEach(c => c.close());
+    screenCallsRef.current = {};
+    setRemoteScreenStream(null);
+    useStore.getState().setSharing(false, null);
+    broadcast({ type: 'SHARING_STOPPED', peerId: peerRef.current?.id });
+  }, [broadcast]);
+
+  // ─── Forward-ref (handleData → connectToPeer circular dep) ───────────────
   const connectToPeerRef = useRef(null);
 
   // ─── Handle incoming data messages ────────────────────────────────────────
@@ -127,7 +178,6 @@ export default function usePeer(roomId) {
     const currentUser = userRef.current;
     switch (data.type) {
       case 'PRESENCE':
-        // Deduplicate by email
         Object.entries(teammatesRef.current).forEach(([pid, tm]) => {
           if (tm.email === data.profile.email && pid !== conn.peer) {
             removeTeammate(pid);
@@ -140,50 +190,41 @@ export default function usePeer(roomId) {
           conn.send({ type: 'PRESENCE', profile: currentUser, status: currentUser?.status || 'Available', isInitial: false });
         }
         break;
-
       case 'HEARTBEAT':
         setTeammate(conn.peer, { heartbeat: Date.now() });
         break;
-
       case 'PEER_LIST':
         data.peers.forEach(pid => {
-          if (pid !== peerRef.current?.id && !connectionsRef.current[pid]) {
-            connectToPeerRef.current?.(pid);
-          }
+          if (pid !== peerRef.current?.id && !connectionsRef.current[pid]) connectToPeerRef.current?.(pid);
         });
         break;
-
       case 'REQUEST_SYNC':
         conn.send({ type: 'PEER_LIST', peers: [peerRef.current?.id, ...Object.keys(connectionsRef.current)] });
         break;
 
-      // ── Huddle signaling ────────────────────────────────────────────────
+      // ── Huddle signaling ─────────────────────────────────────────────────
       case 'HUDDLE_INVITE': {
         const store = useStore.getState();
-        const { fromPeerId } = data;
         if (store.huddle.active) {
-          store.addHuddleMember(fromPeerId);
-          // Already have mic open — call the new member
-          callPeer(fromPeerId);
+          store.addHuddleMember(data.fromPeerId);
+          callAudioPeer(data.fromPeerId);
         } else {
-          // Auto-join muted; audio call will arrive from initiator
-          store.joinHuddle([fromPeerId]);
-          store.setMuted(true);
+          store.joinHuddle([data.fromPeerId]);
+          store.setMuted(true); // receiver starts muted
         }
         conn.send({ type: 'HUDDLE_ACCEPT', fromPeerId: peerRef.current?.id });
         break;
       }
       case 'HUDDLE_ACCEPT': {
         const store = useStore.getState();
-        const { fromPeerId } = data;
         if (store.huddle.active) {
-          store.addHuddleMember(fromPeerId);
-          callPeer(fromPeerId); // call the new joiner
+          store.addHuddleMember(data.fromPeerId);
+          callAudioPeer(data.fromPeerId);
         } else {
           store.joinHuddle([conn.peer]);
-          callPeer(conn.peer);
+          // Audio call is already triggered by startAudio in handleTapToTalk
         }
-        broadcast({ type: 'HUDDLE_JOIN', newPeerId: fromPeerId });
+        broadcast({ type: 'HUDDLE_JOIN', newPeerId: data.fromPeerId });
         break;
       }
       case 'HUDDLE_JOIN': {
@@ -193,27 +234,28 @@ export default function usePeer(roomId) {
       }
       case 'HUDDLE_LEAVE': {
         const store = useStore.getState();
-        callsRef.current[conn.peer]?.close();
-        delete callsRef.current[conn.peer];
-        removeRemoteStream(conn.peer);
+        audioCallsRef.current[conn.peer]?.close();
+        delete audioCallsRef.current[conn.peer];
+        removeRemoteAudio(conn.peer);
         const remaining = store.huddle.members.filter(id => id !== conn.peer);
         if (remaining.length === 0) store.leaveHuddle();
         else store.joinHuddle(remaining);
         break;
       }
       case 'SHARING_STARTED':
+        // Signal only — actual video stream arrives via peer.on('call') with metadata.type='screen'
         useStore.getState().setSharing(true, data.peerId);
         break;
       case 'SHARING_STOPPED':
         useStore.getState().setSharing(false, null);
+        setRemoteScreenStream(null);
         break;
-
       default:
         console.log('P2P msg:', data.type);
     }
-  }, [setTeammate, removeTeammate, broadcast, callPeer]);
+  }, [setTeammate, removeTeammate, broadcast, callAudioPeer]);
 
-  // ─── Ghost cleanup: heartbeat every 15s ──────────────────────────────────
+  // ─── Ghost cleanup ────────────────────────────────────────────────────────
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
@@ -257,18 +299,21 @@ export default function usePeer(roomId) {
       connectToPeer(seedId);
     });
 
-    // Handle incoming DATA connections
     peer.on('connection', conn => {
       conn.on('open', () => { connectionsRef.current[conn.peer] = conn; });
       conn.on('data', d => handleData(conn, d));
     });
 
-    // ── Handle incoming AUDIO calls ──────────────────────────────────────
+    // ── Route incoming calls by metadata type ────────────────────────────
     peer.on('call', call => {
-      answerCall(call);
+      if (call.metadata?.type === 'screen') {
+        answerScreenCall(call);
+      } else {
+        answerAudioCall(call);
+      }
     });
 
-    // Try to become the Seed for this room
+    // Try to become the Seed
     const trySeed = new Peer(seedId);
     trySeed.on('open', () => {
       trySeed.on('connection', conn => {
@@ -278,8 +323,10 @@ export default function usePeer(roomId) {
         });
         conn.on('data', d => handleData(conn, d));
       });
-      // Seed also needs to answer audio calls
-      trySeed.on('call', call => answerCall(call));
+      trySeed.on('call', call => {
+        if (call.metadata?.type === 'screen') answerScreenCall(call);
+        else answerAudioCall(call);
+      });
     });
     trySeed.on('error', err => { if (err.type === 'unavailable-id') trySeed.destroy(); });
 
@@ -290,14 +337,25 @@ export default function usePeer(roomId) {
       setActivePeer(null);
       connectionsRef.current = {};
     };
-  }, [roomId, user?.id]); // Stable: only restart on room or user change
+  }, [roomId, user?.id]); // eslint-disable-line
 
-  // ─── Broadcast presence when status changes ───────────────────────────────
+  // ─── Sync status ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (isReady && user?.status) {
       broadcast({ type: 'PRESENCE', profile: userRef.current, status: userRef.current.status });
     }
   }, [user?.status, isReady, broadcast]);
 
-  return { peer: activePeer, isReady, broadcast, connectionsRef, startAudio, stopAudio, setMicMuted };
+  return {
+    peer: activePeer,
+    isReady,
+    broadcast,
+    connectionsRef,
+    startAudio,
+    stopAudio,
+    setMicMuted,
+    startScreenShare,
+    stopScreenShare,
+    remoteScreenStream,
+  };
 }

@@ -8,7 +8,7 @@ import HuddlePopup from '../components/HuddlePopup';
 export default function Dashboard() {
   const { roomId } = useParams();
   const { user, office, teammates, joinHuddle, huddle } = useStore();
-  const { isReady, broadcast, peer, connectionsRef, startAudio, stopAudio, setMicMuted } = usePeer(roomId);
+  const { isReady, broadcast, peer, connectionsRef, startAudio, stopAudio, setMicMuted, startScreenShare, stopScreenShare, remoteScreenStream } = usePeer(roomId);
   const [showRules, setShowRules] = useState(false);
 
   const handleTapToTalk = (peerId) => {
@@ -107,7 +107,12 @@ export default function Dashboard() {
         )}
       </div>
 
-      <HuddlePopup peer={peer} broadcast={broadcast} connectionsRef={connectionsRef} startAudio={startAudio} stopAudio={stopAudio} setMicMuted={setMicMuted} />
+      <HuddlePopup
+        peer={peer} broadcast={broadcast} connectionsRef={connectionsRef}
+        startAudio={startAudio} stopAudio={stopAudio} setMicMuted={setMicMuted}
+        startScreenShare={startScreenShare} stopScreenShare={stopScreenShare}
+        remoteScreenStream={remoteScreenStream}
+      />
       
       {!isReady && (
         <div style={{ 
