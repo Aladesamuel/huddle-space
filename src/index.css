@@ -1,0 +1,265 @@
+:root {
+  --pc: #1a73e8; /* Google Blue */
+  --pc-hover: #1765cc;
+  --bg: #ffffff;
+  --bg-secondary: #f8f9fa;
+  --text: #3c4043;
+  --text-secondary: #70757a;
+  --border: #dadce0;
+  --success: #1e8e3e;
+  --warning: #f9ab00;
+  --danger: #d93025;
+  --shadow: 0 1px 2px 0 rgba(60,64,67,0.302), 0 1px 3px 1px rgba(60,64,67,0.149);
+  --radius: 8px;
+  --huddle-bg: #202124; /* Google Meet Dark background for calls */
+  --huddle-text: #ffffff;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: var(--text);
+  background-color: var(--bg);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+header {
+  height: 64px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  justify-content: space-between;
+  background-color: var(--bg);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo span {
+  color: var(--pc);
+}
+
+main {
+  flex: 1;
+  padding: 24px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.btn {
+  padding: 8px 24px;
+  border-radius: 4px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: background-color 0.2s;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background-color: var(--pc);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--pc-hover);
+}
+
+.btn-outline {
+  background-color: transparent;
+  color: var(--pc);
+  border: 1px solid var(--border);
+}
+
+.btn-outline:hover {
+  background-color: var(--bg-secondary);
+}
+
+.card {
+  background: white;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  padding: 24px;
+  box-shadow: var(--shadow);
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+}
+
+.form-input {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 16px;
+  outline: none;
+}
+
+.form-input:focus {
+  border-color: var(--pc);
+  box-shadow: inset 0 0 0 1px var(--pc);
+}
+
+/* Grid for teammates */
+.teammate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.teammate-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 24px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  transition: transform 0.2s, box-shadow 0.2s;
+  cursor: pointer;
+  position: relative;
+}
+
+.teammate-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.avatar {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  background-color: #e8f0fe;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  color: var(--pc);
+  margin-bottom: 16px;
+  border: 4px solid white;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.status-badge {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+}
+
+.status-badge.available { background-color: var(--success); }
+.status-badge.busy { background-color: var(--danger); }
+.status-badge.on-break { background-color: var(--warning); }
+
+/* Huddle Popup */
+.huddle-overlay {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 320px;
+  background-color: var(--huddle-bg);
+  border-radius: 12px;
+  color: white;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  overflow: hidden;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+}
+
+.huddle-header {
+  padding: 12px 16px;
+  background-color: rgba(255,255,255,0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.huddle-content {
+  padding: 16px;
+  flex: 1;
+}
+
+.huddle-controls {
+  padding: 12px;
+  display: flex;
+  justify-content: space-around;
+  border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+.huddle-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background-color: rgba(255,255,255,0.15);
+  border: none;
+  color: white;
+  transition: background-color 0.2s;
+}
+
+.huddle-btn:hover {
+  background-color: rgba(255,255,255,0.25);
+}
+
+.huddle-btn.leave {
+  background-color: var(--danger);
+}
+
+.huddle-btn.leave:hover {
+  background-color: #b92721;
+}
+
+.pulse {
+  animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+  0% { box-shadow: 0 0 0 0px rgba(30, 142, 62, 0.4); }
+  100% { box-shadow: 0 0 0 10px rgba(30, 142, 62, 0); }
+}
