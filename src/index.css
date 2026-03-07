@@ -173,120 +173,110 @@ main {
 }
 textarea.form-input { resize: vertical; }
 
-/* ── Presence Grid ─────────────────────────────────────────────────────── */
+/* ── Presence Grid ─────────────────────────────────────────────────────────── */
 .presence-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 12px;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 14px;
 }
 
-/* Tile — looks like a Meet video tile but for audio presence */
+/* Card — reference-style profile tile */
 .presence-tile {
   position: relative;
-  background: var(--bg-tile);
-  border-radius: var(--r-tile);
-  border: 1.5px solid transparent;
-  aspect-ratio: 3/4;
-  overflow: hidden;
+  background: #1e2028;
+  border: 1px solid rgba(255,255,255,0.07);
+  border-radius: 18px;
+  padding: 28px 20px 22px;
   cursor: pointer;
-  transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-  box-shadow: var(--shadow-tile);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  user-select: none;
+  gap: 14px;
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  overflow: hidden;
 }
 .presence-tile:hover {
-  border-color: var(--border-hi);
-  transform: scale(1.025);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  background: #252830;
+  border-color: rgba(255,255,255,0.13);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
 }
 .presence-tile.in-huddle {
   border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(52,168,83,0.2), var(--shadow-tile);
-  animation: huddle-border-pulse 2.5s ease-in-out infinite;
-}
-@keyframes huddle-border-pulse {
-  0%,100% { box-shadow: 0 0 0 3px rgba(52,168,83,0.2), var(--shadow-tile); }
-  50%      { box-shadow: 0 0 0 6px rgba(52,168,83,0.08), var(--shadow-tile); }
+  box-shadow: 0 0 0 3px rgba(52,168,83,0.15);
 }
 
-/* Tile tinted background glow (using avatar colour via inline var) */
+/* Subtle radial glow in background using avatar colour */
 .presence-tile .tile-bg {
-  position: absolute; inset: 0;
-  background: radial-gradient(ellipse at 50% 30%, var(--avatar-color, #2a2c2f) 0%, transparent 70%);
-  opacity: 0.25;
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 0%, var(--avatar-color, transparent) 0%, transparent 65%);
+  opacity: 0.08;
   pointer-events: none;
+  border-radius: 18px;
 }
 
-/* Avatar centred in tile */
-.presence-tile .tile-avatar {
-  width: 80px; height: 80px;
+/* Avatar with vivid coloured ring */
+.tile-avatar {
+  width: 76px;
+  height: 76px;
   border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 38px;
-  position: relative; z-index: 1;
-  transition: transform 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 34px;
   flex-shrink: 0;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  position: relative;
+  z-index: 1;
+  transition: transform 0.25s ease;
+  /* ring is applied via inline style (border + box-shadow) */
 }
 .presence-tile:hover .tile-avatar { transform: scale(1.06); }
 
-/* Name + status — bottom-left overlay, like the reference */
-.tile-footer {
-  position: absolute; bottom: 0; left: 0; right: 0;
-  padding: 28px 14px 13px;
-  background: linear-gradient(transparent, rgba(0,0,0,0.72));
-  display: flex; align-items: flex-end; justify-content: space-between;
-}
+/* Name row */
 .tile-name {
-  font-size: 14px; font-weight: 600; color: #fff;
-  text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  text-align: center;
   line-height: 1.2;
-}
-.tile-status-txt {
-  font-size: 11px; color: rgba(255,255,255,0.55); font-weight: 500;
+  z-index: 1;
 }
 
-/* Status dot — top-right */
-.tile-dot {
-  position: absolute; top: 13px; right: 13px;
-  width: 10px; height: 10px; border-radius: 50%;
-  border: 2px solid rgba(0,0,0,0.5);
-  z-index: 2;
+/* Status row — dot + label */
+.tile-status-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  z-index: 1;
 }
-.tile-dot.available { background: var(--green); box-shadow: 0 0 6px rgba(52,168,83,0.6); }
-.tile-dot.busy      { background: var(--red); }
-.tile-dot.on-break  { background: var(--amber); }
+.tile-status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.tile-status-dot.available { background: var(--green); box-shadow: 0 0 5px rgba(52,168,83,0.7); }
+.tile-status-dot.busy      { background: var(--red); }
+.tile-status-dot.on-break  { background: var(--amber); }
+.tile-status-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-sub);
+}
 
-/* "Tap to talk" overlay — appears on hover when available */
-.tile-cta {
-  position: absolute; inset: 0;
-  background: rgba(26,115,232,0.12);
-  display: flex; align-items: center; justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-  border-radius: var(--r-tile);
-}
-.tile-cta-pill {
-  background: var(--blue);
-  color: #fff; font-size: 13px; font-weight: 700;
-  padding: 8px 18px; border-radius: var(--r-pill);
-  display: flex; align-items: center; gap: 7px;
-  box-shadow: 0 4px 16px var(--blue-glow);
-  transform: scale(0.9);
-  transition: transform 0.2s ease;
-}
-.presence-tile:hover .tile-cta { opacity: 1; }
-.presence-tile:hover .tile-cta-pill { transform: scale(1); }
-
-/* Live wave bars (in-huddle indicator bottom-right) */
+/* Audio wave — in-huddle indicator */
 .tile-wave {
-  display: flex; align-items: flex-end; gap: 2px; height: 16px;
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 18px;
+  z-index: 1;
 }
 .tile-wave span {
-  display: block; width: 3px; border-radius: 2px;
+  display: block;
+  width: 3px;
+  border-radius: 2px;
   background: var(--green);
   animation: wave-bar 1.1s ease-in-out infinite;
 }
@@ -294,8 +284,38 @@ textarea.form-input { resize: vertical; }
 .tile-wave span:nth-child(3) { animation-delay: 0.3s; }
 @keyframes wave-bar {
   0%,100% { height: 4px; opacity: 0.5; }
-  50%      { height: 14px; opacity: 1; }
+  50%      { height: 16px; opacity: 1; }
 }
+
+/* "Tap to talk" hover overlay */
+.tile-cta {
+  position: absolute;
+  inset: 0;
+  background: rgba(26,115,232,0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+  border-radius: 18px;
+}
+.tile-cta-pill {
+  background: var(--blue);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 8px 18px;
+  border-radius: var(--r-pill);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  box-shadow: 0 4px 16px var(--blue-glow);
+  transform: scale(0.88);
+  transition: transform 0.2s ease;
+}
+.presence-tile:hover .tile-cta { opacity: 1; }
+.presence-tile:hover .tile-cta-pill { transform: scale(1); }
+
 
 /* Empty state */
 .empty-grid {

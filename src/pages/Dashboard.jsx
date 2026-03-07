@@ -143,37 +143,39 @@ export default function Dashboard() {
                 key={peerId}
                 className={`presence-tile ${inHuddle ? 'in-huddle' : ''}`}
                 onClick={() => handleTapToTalk(peerId)}
-                style={{ '--avatar-color': data.avatar?.bg }}
+                style={{ '--avatar-color': data.avatar?.color }}
               >
                 {/* Colour wash */}
                 <div className="tile-bg" />
 
-                {/* Status dot */}
-                <div className={`tile-dot ${dotClass}`} />
-
-                {/* Big avatar */}
+                {/* Avatar with vivid ring */}
                 <div
                   className="tile-avatar"
-                  style={{ background: data.avatar?.bg ?? 'rgba(255,255,255,0.08)', color: data.avatar?.color ?? '#fff' }}
+                  style={{
+                    background: data.avatar?.bg ?? 'rgba(255,255,255,0.06)',
+                    border: `3px solid ${data.avatar?.color ?? 'rgba(255,255,255,0.2)'}`,
+                    boxShadow: `0 0 0 2px rgba(0,0,0,0.6), 0 0 20px ${data.avatar?.color ?? 'transparent'}55`,
+                  }}
                 >
                   {data.avatar?.icon ?? data.name?.[0]}
                 </div>
 
-                {/* Footer — name + audio wave */}
-                <div className="tile-footer">
-                  <div>
-                    <div className="tile-name">{data.name}</div>
-                    <div className="tile-status-txt">{data.status}</div>
-                  </div>
+                {/* Name */}
+                <div className="tile-name">{data.name}</div>
+
+                {/* Status */}
+                <div className="tile-status-row">
+                  <div className={`tile-status-dot ${(data.status ?? 'available').toLowerCase().replace(' ', '-')}`} />
+                  <span className="tile-status-label">{data.status}</span>
                   {inHuddle && (
-                    <div className="tile-wave">
+                    <div className="tile-wave" style={{ marginLeft: 4 }}>
                       <span /><span /><span />
                     </div>
                   )}
                 </div>
 
-                {/* Tap to talk hover overlay */}
-                {available && !huddle.active && (
+                {/* Tap to talk overlay */}
+                {data.status === 'Available' && !huddle.active && (
                   <div className="tile-cta">
                     <div className="tile-cta-pill">
                       <Mic size={13} /> Talk
@@ -181,6 +183,7 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
+
             );
           })}
 
