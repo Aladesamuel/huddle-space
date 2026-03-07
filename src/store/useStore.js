@@ -24,8 +24,13 @@ const useStore = create(
         const incomingEmail = data.email || newTeammates[peerId]?.email;
         if (incomingEmail) {
           Object.keys(newTeammates).forEach(pid => {
+            // Only prune if it's the EXACT same person (email) but a different connection,
+            // AND the old connection hasn't been seen in a while (prevents killing active multi-device tests)
             if (pid !== peerId && newTeammates[pid]?.email === incomingEmail) {
-              delete newTeammates[pid];
+              const lastSeen = newTeammates[pid].lastSeen || 0;
+              if (Date.now() - lastSeen > 15000) {
+                delete newTeammates[pid];
+              }
             }
           });
         }
