@@ -168,8 +168,8 @@ export default function Dashboard() {
 
                 {/* Status Row */}
                 <div className="tile-status-row">
-                  <div className={`tile-status-dot ${(data.status ?? 'available').toLowerCase().replace(' ', '-')}`} />
-                  <span className="tile-status-label">{data.status}</span>
+                  <div className={`tile-status-dot ${inHuddle ? 'available' : (data.status ?? 'available').toLowerCase().replace(' ', '-')}`} />
+                  <span className="tile-status-label">{inHuddle ? 'In Huddle' : data.status}</span>
                   {inHuddle && (
                     <div className="tile-wave" style={{ marginLeft: 4 }}>
                       <span /><span /><span />
