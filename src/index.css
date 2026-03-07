@@ -1,17 +1,32 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
 :root {
-  --pc: #1a73e8; /* Google Blue */
-  --pc-hover: #1765cc;
-  --bg: #ffffff;
-  --bg-secondary: #f8f9fa;
-  --text: #3c4043;
-  --text-secondary: #70757a;
-  --border: #dadce0;
-  --success: #1e8e3e;
-  --warning: #f9ab00;
-  --danger: #d93025;
-  --shadow: 0 1px 2px 0 rgba(60,64,67,0.302), 0 1px 3px 1px rgba(60,64,67,0.149);
-  --radius: 8px;
-  --huddle-bg: #202124; /* Google Meet Dark background for calls */
+  /* Brand Colors - Sophisticated Indigo/Blue */
+  --pc: hsl(230, 85%, 60%);
+  --pc-hover: hsl(230, 85%, 55%);
+  --pc-light: hsl(230, 85%, 95%);
+  
+  /* Neutral Palette */
+  --bg: hsl(210, 40%, 98%);
+  --bg-secondary: hsl(0, 0%, 100%);
+  --text: hsl(220, 40%, 15%);
+  --text-secondary: hsl(220, 20%, 45%);
+  --border: hsl(220, 30%, 92%);
+  
+  /* Status Colors */
+  --success: hsl(150, 70%, 40%);
+  --warning: hsl(40, 90%, 55%);
+  --danger: hsl(0, 80%, 60%);
+  
+  /* Effects */
+  --shadow-sm: 0 2px 4px rgba(0,0,0,0.02);
+  --shadow-md: 0 10px 25px -5px rgba(0,0,0,0.05), 0 8px 10px -6px rgba(0,0,0,0.05);
+  --shadow-lg: 0 20px 40px -10px rgba(0,0,0,0.1);
+  --radius: 16px;
+  --radius-sm: 8px;
+  
+  /* Huddle Theme */
+  --huddle-bg: hsl(220, 30%, 10%);
   --huddle-text: #ffffff;
 }
 
@@ -22,11 +37,14 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'Outfit', sans-serif;
   color: var(--text);
-  background-color: var(--bg);
+  background: var(--bg);
+  background-image: 
+    radial-gradient(at 0% 0%, hsla(230, 85%, 60%, 0.05) 0, transparent 50%), 
+    radial-gradient(at 100% 100%, hsla(230, 85%, 60%, 0.03) 0, transparent 50%);
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  min-height: 100vh;
 }
 
 .app-container {
@@ -36,47 +54,54 @@ body {
 }
 
 header {
-  height: 64px;
+  height: 80px;
   border-bottom: 1px solid var(--border);
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 40px;
   justify-content: space-between;
-  background-color: var(--bg);
+  background-color: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 100;
+  transition: all 0.3s ease;
 }
 
 .logo {
-  font-size: 22px;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  color: var(--text);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .logo span {
   color: var(--pc);
+  background: linear-gradient(135deg, var(--pc), #a142f4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 main {
   flex: 1;
-  padding: 24px;
-  max-width: 1200px;
+  padding: 40px;
+  max-width: 1400px;
   margin: 0 auto;
   width: 100%;
 }
 
+/* Buttons */
 .btn {
-  padding: 8px 24px;
-  border-radius: 4px;
+  padding: 10px 24px;
+  border-radius: var(--radius-sm);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: background-color 0.2s;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -84,182 +109,247 @@ main {
 }
 
 .btn-primary {
-  background-color: var(--pc);
+  background: linear-gradient(135deg, var(--pc), #6366f1);
   color: white;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .btn-primary:hover {
-  background-color: var(--pc-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
 }
 
 .btn-outline {
-  background-color: transparent;
+  background-color: white;
   color: var(--pc);
   border: 1px solid var(--border);
 }
 
 .btn-outline:hover {
-  background-color: var(--bg-secondary);
+  background-color: var(--pc-light);
+  border-color: var(--pc);
+  transform: translateY(-1px);
 }
 
+/* Cards */
 .card {
   background: white;
   border-radius: var(--radius);
   border: 1px solid var(--border);
-  padding: 24px;
-  box-shadow: var(--shadow);
+  padding: 32px;
+  box-shadow: var(--shadow-md);
+  transition: box-shadow 0.3s ease;
 }
 
 .form-group {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .form-group label {
   display: block;
   font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 8px;
+  font-weight: 600;
+  margin-bottom: 10px;
   color: var(--text-secondary);
 }
 
 .form-input {
   width: 100%;
-  padding: 12px;
-  border: 1px solid var(--border);
-  border-radius: 4px;
+  padding: 14px 16px;
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
   font-size: 16px;
+  font-family: inherit;
   outline: none;
+  transition: all 0.2s ease;
+  background: var(--bg);
 }
 
 .form-input:focus {
   border-color: var(--pc);
-  box-shadow: inset 0 0 0 1px var(--pc);
+  background: white;
+  box-shadow: 0 0 0 4px var(--pc-light);
 }
 
-/* Grid for teammates */
+/* Teammate Grid */
 .teammate-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 16px;
-  margin-top: 24px;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 24px;
+  margin-top: 32px;
 }
 
 .teammate-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 24px;
-  background-color: var(--bg-secondary);
+  padding: 32px;
+  background: white;
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   cursor: pointer;
   position: relative;
+  overflow: hidden;
+}
+
+.teammate-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, var(--pc), transparent);
+  transform: scaleX(0);
+  transition: transform 0.4s ease;
 }
 
 .teammate-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow);
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+}
+
+.teammate-card:hover::before {
+  transform: scaleX(1);
 }
 
 .avatar {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background-color: #e8f0fe;
+  width: 100px;
+  height: 100px;
+  border-radius: 35% 65% 68% 32% / 30% 30% 70% 70%; /* Organic shape */
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 40px;
-  color: var(--pc);
-  margin-bottom: 16px;
-  border: 4px solid white;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  font-size: 44px;
+  margin-bottom: 20px;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+  transition: all 0.5s ease;
+  background: linear-gradient(135deg, #f0f4ff, #ffffff);
+}
+
+.teammate-card:hover .avatar {
+  border-radius: 50%;
+  transform: rotate(5deg) scale(1.05);
 }
 
 .status-badge {
   position: absolute;
-  top: 16px;
-  right: 16px;
-  width: 12px;
-  height: 12px;
+  top: 24px;
+  right: 24px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  border: 2px solid white;
+  border: 3px solid white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 
 .status-badge.available { background-color: var(--success); }
 .status-badge.busy { background-color: var(--danger); }
 .status-badge.on-break { background-color: var(--warning); }
 
-/* Huddle Popup */
+/* Huddle Overlay */
 .huddle-overlay {
   position: fixed;
-  bottom: 24px;
-  right: 24px;
-  width: 320px;
+  bottom: 30px;
+  right: 30px;
+  width: 350px;
   background-color: var(--huddle-bg);
-  border-radius: 12px;
+  border-radius: 24px;
   color: white;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.4);
   overflow: hidden;
   z-index: 1000;
   display: flex;
   flex-direction: column;
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
 .huddle-header {
-  padding: 12px 16px;
-  background-color: rgba(255,255,255,0.1);
+  padding: 16px 24px;
+  background-color: rgba(255,255,255,0.05);
   display: flex;
   justify-content: space-between;
   align-items: center;
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255,255,255,0.05);
 }
 
 .huddle-content {
-  padding: 16px;
+  padding: 24px;
   flex: 1;
 }
 
 .huddle-controls {
-  padding: 12px;
+  padding: 20px 24px;
   display: flex;
-  justify-content: space-around;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  justify-content: center;
+  gap: 16px;
+  background: rgba(0,0,0,0.2);
 }
 
 .huddle-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
+  width: 48px;
+  height: 48px;
+  border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  background-color: rgba(255,255,255,0.15);
-  border: none;
+  background-color: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.1);
   color: white;
-  transition: background-color 0.2s;
+  transition: all 0.2s ease;
 }
 
 .huddle-btn:hover {
-  background-color: rgba(255,255,255,0.25);
+  background-color: rgba(255,255,255,0.2);
+  transform: scale(1.05);
+}
+
+.huddle-btn.active {
+  background-color: var(--pc);
+  border-color: var(--pc);
 }
 
 .huddle-btn.leave {
   background-color: var(--danger);
+  border: none;
 }
 
 .huddle-btn.leave:hover {
-  background-color: #b92721;
+  background-color: #ff4d4d;
 }
 
 .pulse {
-  animation: pulse-animation 2s infinite;
+  animation: refined-pulse 2s infinite;
 }
 
-@keyframes pulse-animation {
-  0% { box-shadow: 0 0 0 0px rgba(30, 142, 62, 0.4); }
-  100% { box-shadow: 0 0 0 10px rgba(30, 142, 62, 0); }
+@keyframes refined-pulse {
+  0% { box-shadow: 0 0 0 0px hsla(150, 70%, 40%, 0.4); }
+  70% { box-shadow: 0 0 0 15px hsla(150, 70%, 40%, 0); }
+  100% { box-shadow: 0 0 0 0px hsla(150, 70%, 40%, 0); }
+}
+
+/* Transitions */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Animations for huddle membership */
+.teammate-card.pulse {
+  border-color: var(--success);
+  background: hsla(150, 70%, 40%, 0.05);
 }

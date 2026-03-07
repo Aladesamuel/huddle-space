@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { Shield, Check } from 'lucide-react';
+import { Shield, Check, User, ArrowRight, Home as HomeIcon } from 'lucide-react';
 import useStore from '../store/useStore';
 
 const AVATARS = [
-  { id: '1', icon: '👤', bg: '#e8f0fe', color: '#1a73e8' },
-  { id: '2', icon: '💼', bg: '#fef7e0', color: '#f9ab00' },
-  { id: '3', icon: '🚀', bg: '#e6f4ea', color: '#1e8e3e' },
-  { id: '4', icon: '💡', bg: '#fce8e6', color: '#d93025' },
-  { id: '5', icon: '🎨', bg: '#f3e8fd', color: '#a142f4' },
-  { id: '6', icon: '🧠', bg: '#e1f5fe', color: '#039be5' },
+  { id: '1', icon: '👤', bg: 'hsl(230, 85%, 95%)', color: 'hsl(230, 85%, 60%)' },
+  { id: '2', icon: '💼', bg: 'hsl(40, 90%, 95%)', color: 'hsl(40, 90%, 55%)' },
+  { id: '3', icon: '🚀', bg: 'hsl(150, 70%, 95%)', color: 'hsl(150, 70%, 40%)' },
+  { id: '4', icon: '💡', bg: 'hsl(0, 80%, 95%)', color: 'hsl(0, 80%, 60%)' },
+  { id: '5', icon: '🎨', bg: 'hsl(270, 70%, 95%)', color: 'hsl(270, 70%, 60%)' },
+  { id: '6', icon: '🧠', bg: 'hsl(200, 80%, 95%)', color: 'hsl(200, 80%, 50%)' },
 ];
 
 export default function Onboarding() {
@@ -28,7 +28,7 @@ export default function Onboarding() {
       return { officeData: null, error: '' };
     } catch (e) {
       console.error('Failed to parse office data:', e);
-      return { officeData: null, error: 'Invalid invite link.' };
+      return { officeData: null, error: 'The invite link appears to be invalid.' };
     }
   }, [hash]);
 
@@ -38,7 +38,6 @@ export default function Onboarding() {
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [error, setError] = useState('');
 
-  // Combine manual errors with parse errors
   const activeError = error || parseError;
 
   const handleJoin = (e) => {
@@ -48,7 +47,7 @@ export default function Onboarding() {
     if (officeData?.p) {
       const hashedEntered = btoa(password);
       if (hashedEntered !== officeData.h) {
-        setError('Incorrect office password.');
+        setError('Incorrect office password. Please try again.');
         return;
       }
     }
@@ -66,25 +65,30 @@ export default function Onboarding() {
     navigate(`/office/${roomId}`);
   };
 
-  if (!officeData && !activeError) return <div style={{ textAlign: 'center', marginTop: '60px' }}>Loading office details...</div>;
+  if (!officeData && !activeError) return (
+    <div style={{ display: 'flex', justifyContent: 'center', marginTop: '100px' }}>
+      <div className="spinner" style={{ width: '40px', height: '40px', border: '4px solid var(--border)', borderTopColor: 'var(--pc)', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+      <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+    </div>
+  );
 
   return (
-    <div style={{ maxWidth: '500px', margin: '40px auto' }}>
-      <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-        <h2 style={{ fontSize: '24px', fontWeight: 500, color: '#3c4043' }}>
-          {activeError ? 'Oops!' : `Join ${officeData?.n}`}
+    <div style={{ maxWidth: '540px', margin: '60px auto', animation: 'fadeIn 0.6s ease-out' }}>
+      <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+        <h2 style={{ fontSize: '32px', fontWeight: 700, color: 'var(--text)', letterSpacing: '-0.5px' }}>
+          {activeError ? 'Access Denied' : `Welcome to ${officeData?.n}`}
         </h2>
-        <p style={{ color: '#70757a', marginTop: '8px' }}>
-          {activeError ? activeError : "Set up your professional profile to enter the office."}
+        <p style={{ color: 'var(--text-secondary)', marginTop: '12px', fontSize: '16px' }}>
+          {activeError ? activeError : "Complete your professional profile to enter the space."}
         </p>
       </div>
 
       {!activeError && (
-        <form className="card" onSubmit={handleJoin}>
+        <form className="card" onSubmit={handleJoin} style={{ padding: '40px' }}>
           {officeData?.p && (
             <div className="form-group">
               <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                 <Shield size={16} /> Office Password
+                 <Shield size={16} /> Secure Office Password
               </label>
               <input 
                 className="form-input" 
@@ -98,10 +102,12 @@ export default function Onboarding() {
           )}
 
           <div className="form-group">
-            <label>Full Name</label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <User size={16} /> Display Name
+            </label>
             <input 
               className="form-input" 
-              placeholder="e.g. Sam Wilson"
+              placeholder="e.g. Sarah Jenkins"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
               required
@@ -109,11 +115,11 @@ export default function Onboarding() {
           </div>
 
           <div className="form-group">
-            <label>Email Address</label>
+            <label>Work Email</label>
             <input 
               className="form-input" 
               type="email"
-              placeholder="sam@startup.com"
+              placeholder="sarah@hq.com"
               value={userEmail}
               onChange={(e) => setUserEmail(e.target.value)}
               required
@@ -121,7 +127,7 @@ export default function Onboarding() {
           </div>
 
           <div className="form-group">
-            <label>Select Your Avatar</label>
+            <label>Avatar Character</label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: '12px' }}>
               {AVATARS.map((av) => (
                 <div 
@@ -130,23 +136,30 @@ export default function Onboarding() {
                   style={{
                     width: '100%',
                     aspectRatio: '1',
-                    borderRadius: '8px',
+                    borderRadius: '16px',
                     backgroundColor: av.bg,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontSize: '24px',
+                    fontSize: '28px',
                     cursor: 'pointer',
-                    border: selectedAvatar.id === av.id ? `2px solid ${av.color}` : '2px solid transparent',
+                    border: '2px solid transparent',
+                    borderColor: selectedAvatar.id === av.id ? av.color : 'transparent',
+                    boxShadow: selectedAvatar.id === av.id ? `0 8px 20px -5px ${av.color}66` : 'none',
+                    transform: selectedAvatar.id === av.id ? 'scale(1.05)' : 'scale(1)',
+                    transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                     position: 'relative',
                   }}
                 >
-                  {av.icon}
+                  <span style={{ filter: selectedAvatar.id === av.id ? 'none' : 'grayscale(0.4)' }}>
+                    {av.icon}
+                  </span>
                   {selectedAvatar.id === av.id && (
                     <div style={{ 
                       position: 'absolute', top: '-6px', right: '-6px', 
                       backgroundColor: av.color, color: 'white', borderRadius: '50%',
-                      width: '18px', height: '18px', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                      width: '20px', height: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                     }}>
                       <Check size={12} strokeWidth={4} />
                     </div>
@@ -156,16 +169,22 @@ export default function Onboarding() {
             </div>
           </div>
 
-          <button className="btn btn-primary" style={{ width: '100%', marginTop: '12px' }}>
-            Enter Office
+          <button className="btn btn-primary" style={{ width: '100%', height: '54px', fontSize: '16px', marginTop: '12px' }}>
+            Enter Office Workspace <ArrowRight size={18} />
           </button>
         </form>
       )}
 
       {activeError && (
-        <button className="btn btn-outline" style={{ width: '100%' }} onClick={() => navigate('/')}>
-          Return Home
-        </button>
+        <div style={{ textAlign: 'center' }}>
+          <button 
+            className="btn btn-outline" 
+            style={{ width: '100%', height: '50px' }} 
+            onClick={() => navigate('/')}
+          >
+            <HomeIcon size={18} /> Return Home
+          </button>
+        </div>
       )}
     </div>
   );
