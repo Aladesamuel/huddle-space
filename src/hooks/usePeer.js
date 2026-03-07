@@ -85,11 +85,15 @@ export default function usePeer(roomId) {
   // ─── Answer AUDIO call ───────────────────────────────────────────────────
   const answerAudioCall = useCallback(async (call) => {
     try {
+      const isMuted = useStore.getState().huddle.isMuted;
       let stream = localStreamRef.current;
       if (!stream) {
         stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
         localStreamRef.current = stream;
       }
+      // Ensure the answered stream respects our current mute state
+      stream.getAudioTracks().forEach(t => { t.enabled = !isMuted; });
+      
       call.answer(stream);
       audioCallsRef.current[call.peer] = call;
       call.on('stream', remote => playRemoteAudio(call.peer, remote));
@@ -100,6 +104,25 @@ export default function usePeer(roomId) {
       console.error('Failed to answer audio call:', e);
     }
   }, []);
+
+  // ─── Sync local tracks with mute state ───────────────────────────────────
+  const huddleMuted = useStore(s => s.huddle.isMuted);
+  const huddleActive = useStore(s => s.huddle.active);
+
+  useEffect(() => {
+    if (localStreamRef.current) {
+      localStreamRef.current.getAudioTracks().forEach(t => {
+        t.enabled = !huddleMuted;
+      });
+    }
+  }, [huddleMuted]);
+
+  useEffect(() => {
+    if (!huddleActive && localStreamRef.current) {
+      localStreamRef.current.getTracks().forEach(t => t.stop());
+      localStreamRef.current = null;
+    }
+  }, [huddleActive]);
 
   // ─── Answer SCREEN SHARE call ───────────────────────────────────────────
   const answerScreenCall = useCallback((call) => {

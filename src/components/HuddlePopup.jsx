@@ -14,6 +14,7 @@ export default function HuddlePopup({
 
   const [showAddMenu, setShowAddMenu]   = useState(false);
   const [screenFull,  setScreenFull]    = useState(false);
+  const [isMinimized, setIsMinimized]   = useState(false);
   const audioStartedRef = useRef(false);
 
   // ─── Start audio when huddle activates ────────────────────────────────────
@@ -148,149 +149,169 @@ export default function HuddlePopup({
       )}
 
       {/* ── Huddle Overlay ── */}
-      <div className="huddle-overlay">
+      <div className="huddle-overlay" style={{ height: isMinimized ? 'auto' : 'initial' }}>
         <div className="huddle-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ color: 'var(--success)', display: 'flex' }}><Mic size={14} /></span>
             <span>HUDDLE · {huddle.members.length + 1} PEOPLE</span>
           </div>
+          <button 
+            onClick={() => setIsMinimized(!isMinimized)}
+            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', display: 'flex' }}
+          >
+            {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+          </button>
         </div>
 
-        <div className="huddle-content">
-          {/* Member avatars */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
-            {/* Self */}
-            <div title={`${user?.name} (you)`} style={{
-              width: '44px', height: '44px', borderRadius: '16px',
-              backgroundColor: user?.avatar?.bg || 'var(--pc)',
-              color: user?.avatar?.color || '#fff',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: '20px', flexShrink: 0, position: 'relative',
-              boxShadow: huddle.isMuted ? 'none' : `0 0 0 3px hsla(150, 70%, 40%, 0.4)`,
-              transition: 'all 0.3s ease',
-            }}>
-              {user?.avatar?.icon || user?.name?.[0] || '👤'}
-              {huddle.isMuted && (
-                <div style={{
-                  position: 'absolute', bottom: '-4px', right: '-4px',
-                  background: 'var(--danger)', borderRadius: '50%',
-                  width: '18px', height: '18px',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white',
-                  border: '2px solid var(--huddle-bg)',
-                }}><MicOff size={10} strokeWidth={3} /></div>
-              )}
+        {!isMinimized && (
+          <div className="huddle-content" style={{ animation: 'fadeIn 0.3s ease-out' }}>
+            {/* Member avatars */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center', marginBottom: '16px' }}>
+              {/* Self */}
+              <div title={`${user?.name} (you)`} style={{
+                width: '44px', height: '44px', borderRadius: '16px',
+                backgroundColor: user?.avatar?.bg || 'var(--pc)',
+                color: user?.avatar?.color || '#fff',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '20px', flexShrink: 0, position: 'relative',
+                boxShadow: huddle.isMuted ? 'none' : `0 0 0 3px hsla(150, 70%, 40%, 0.4)`,
+                transition: 'all 0.3s ease',
+              }}>
+                {user?.avatar?.icon || user?.name?.[0] || '👤'}
+                {huddle.isMuted && (
+                  <div style={{
+                    position: 'absolute', bottom: '-4px', right: '-4px',
+                    background: 'var(--danger)', borderRadius: '50%',
+                    width: '18px', height: '18px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white',
+                    border: '2px solid var(--huddle-bg)',
+                  }}><MicOff size={10} strokeWidth={3} /></div>
+                )}
+              </div>
+
+              {/* Others */}
+              {huddle.members.map(mid => {
+                const tm = teammates[mid];
+                return (
+                  <div key={mid} title={tm?.name || mid} style={{
+                    width: '44px', height: '44px', borderRadius: '16px',
+                    backgroundColor: tm?.avatar?.bg || 'rgba(255,255,255,0.05)',
+                    color: tm?.avatar?.color || '#fff',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '20px', flexShrink: 0,
+                    boxShadow: `0 0 0 3px hsla(150, 70%, 40%, 0.4)`,
+                  }}>
+                    {tm?.avatar?.icon || tm?.name?.[0] || '👤'}
+                  </div>
+                );
+              })}
+
+              {/* Add person */}
+              <div style={{ position: 'relative' }}>
+                <button 
+                  className="huddle-btn" 
+                  style={{ width: '44px', height: '44px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)' }}
+                  onClick={() => setShowAddMenu(v => !v)} 
+                  title="Add someone"
+                >
+                  <UserPlus size={18} />
+                </button>
+                {showAddMenu && (
+                  <div style={{
+                    position: 'absolute', bottom: '56px', left: 0,
+                    background: '#fff', borderRadius: '16px', padding: '12px',
+                    boxShadow: '0 20px 40px rgba(0,0,0,0.5)', minWidth: '200px', zIndex: 1010,
+                    border: '1px solid rgba(0,0,0,0.1)',
+                    animation: 'slideInUp 0.3s ease-out'
+                  }}>
+                    <div style={{ color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 700, marginBottom: '8px', padding: '0 8px', letterSpacing: '0.5px' }}>AVAILABLE TEAMMATES</div>
+                    {availableToAdd.length === 0
+                      ? <div style={{ fontSize: '13px', color: 'var(--text-secondary)', padding: '8px' }}>No one nearby</div>
+                      : availableToAdd.map(([pid, data]) => (
+                        <button key={pid} onClick={() => handleAddTeammate(pid)} style={{
+                          display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
+                          background: 'none', border: 'none', padding: '10px', cursor: 'pointer',
+                          borderRadius: '10px', fontSize: '14px', color: 'var(--text)', transition: 'background 0.2s',
+                          textAlign: 'left'
+                        }}
+                        onMouseOver={e => e.currentTarget.style.background = 'var(--bg)'}
+                        onMouseOut={e  => e.currentTarget.style.background = 'none'}
+                        >
+                          <span style={{ fontSize: '18px' }}>{data.avatar?.icon || '👤'}</span>
+                          <span style={{ fontWeight: 600 }}>{data.name}</span>
+                        </button>
+                      ))
+                    }
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* Others */}
-            {huddle.members.map(mid => {
-              const tm = teammates[mid];
-              return (
-                <div key={mid} title={tm?.name || mid} style={{
-                  width: '44px', height: '44px', borderRadius: '16px',
-                  backgroundColor: tm?.avatar?.bg || 'rgba(255,255,255,0.05)',
-                  color: tm?.avatar?.color || '#fff',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: '20px', flexShrink: 0,
-                  boxShadow: `0 0 0 3px hsla(150, 70%, 40%, 0.4)`,
-                }}>
-                  {tm?.avatar?.icon || tm?.name?.[0] || '👤'}
-                </div>
-              );
-            })}
+            {/* Muted hint */}
+            {huddle.isMuted ? (
+              <div style={{
+                fontSize: '13px', color: '#ff4d4d', textAlign: 'center',
+                padding: '10px', background: 'rgba(255, 77, 77, 0.1)', borderRadius: '12px',
+                fontWeight: 600, border: '1px solid rgba(255, 77, 77, 0.1)'
+              }}>
+                Your microphone is muted
+              </div>
+            ) : (
+               <div style={{
+                fontSize: '13px', color: 'var(--success)', textAlign: 'center',
+                padding: '10px', background: 'rgba(30, 215, 96, 0.05)', borderRadius: '12px',
+                fontWeight: 600
+              }}>
+                People can hear you
+              </div>
+            )}
 
-            {/* Add person */}
-            <div style={{ position: 'relative' }}>
-              <button 
-                className="huddle-btn" 
-                style={{ width: '44px', height: '44px', borderRadius: '16px', background: 'rgba(255,255,255,0.05)' }}
-                onClick={() => setShowAddMenu(v => !v)} 
-                title="Add someone"
-              >
-                <UserPlus size={18} />
-              </button>
-              {showAddMenu && (
-                <div style={{
-                  position: 'absolute', bottom: '56px', left: 0,
-                  background: '#fff', borderRadius: '16px', padding: '12px',
-                  boxShadow: '0 20px 40px rgba(0,0,0,0.5)', minWidth: '200px', zIndex: 1010,
-                  border: '1px solid rgba(0,0,0,0.1)',
-                  animation: 'slideInUp 0.3s ease-out'
-                }}>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '11px', fontWeight: 700, marginBottom: '8px', padding: '0 8px', letterSpacing: '0.5px' }}>AVAILABLE TEAMMATES</div>
-                  {availableToAdd.length === 0
-                    ? <div style={{ fontSize: '13px', color: 'var(--text-secondary)', padding: '8px' }}>No one nearby</div>
-                    : availableToAdd.map(([pid, data]) => (
-                      <button key={pid} onClick={() => handleAddTeammate(pid)} style={{
-                        display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
-                        background: 'none', border: 'none', padding: '10px', cursor: 'pointer',
-                        borderRadius: '10px', fontSize: '14px', color: 'var(--text)', transition: 'background 0.2s',
-                        textAlign: 'left'
-                      }}
-                      onMouseOver={e => e.currentTarget.style.background = 'var(--bg)'}
-                      onMouseOut={e  => e.currentTarget.style.background = 'none'}
-                      >
-                        <span style={{ fontSize: '18px' }}>{data.avatar?.icon || '👤'}</span>
-                        <span style={{ fontWeight: 600 }}>{data.name}</span>
-                      </button>
-                    ))
-                  }
-                </div>
-              )}
-            </div>
+            {huddle.isSharing && !isMeSharing && (
+              <div style={{
+                marginTop: '12px', fontSize: '13px', color: '#8ab4f8',
+                background: 'rgba(138, 180, 248, 0.1)', borderRadius: '12px', padding: '10px 14px',
+                fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px',
+              }}>
+                <Monitor size={14} /> Screen View Active • {sharerName}
+              </div>
+            )}
           </div>
-
-          {/* Muted hint */}
-          {huddle.isMuted ? (
-            <div style={{
-              fontSize: '13px', color: '#ff4d4d', textAlign: 'center',
-              padding: '10px', background: 'rgba(255, 77, 77, 0.1)', borderRadius: '12px',
-              fontWeight: 600, border: '1px solid rgba(255, 77, 77, 0.1)'
-            }}>
-              Your microphone is muted
-            </div>
-          ) : (
-             <div style={{
-              fontSize: '13px', color: 'var(--success)', textAlign: 'center',
-              padding: '10px', background: 'rgba(30, 215, 96, 0.05)', borderRadius: '12px',
-              fontWeight: 600
-            }}>
-              People can hear you
-            </div>
-          )}
-
-          {huddle.isSharing && !isMeSharing && (
-            <div style={{
-              marginTop: '12px', fontSize: '13px', color: 'var(--pc)',
-              background: 'var(--pc-light)', borderRadius: '12px', padding: '10px 14px',
-              fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px',
-              color: '#8ab4f8'
-            }}>
-              <Monitor size={14} /> Screen View Active • {sharerName}
-            </div>
-          )}
-        </div>
+        )}
 
         {/* Controls */}
-        <div className="huddle-controls">
+        <div className="huddle-controls" style={{ padding: isMinimized ? '12px 24px' : '20px 24px' }}>
           <button className={`huddle-btn ${huddle.isMuted ? 'active' : ''}`}
             onClick={handleMuteToggle}
             style={{ 
               backgroundColor: huddle.isMuted ? 'rgba(255, 77, 77, 0.2)' : '',
-              color: huddle.isMuted ? '#ff4d4d' : '' 
+              color: huddle.isMuted ? '#ff4d4d' : '',
+              width: isMinimized ? '40px' : '48px',
+              height: isMinimized ? '40px' : '48px',
             }}
           >
-            {huddle.isMuted ? <MicOff size={22} /> : <Mic size={22} />}
+            {huddle.isMuted ? <MicOff size={isMinimized ? 18 : 22} /> : <Mic size={isMinimized ? 18 : 22} />}
           </button>
 
           <button
             className={`huddle-btn${isMeSharing ? ' active' : ''}`}
             onClick={handleScreenToggle}
+            style={{ 
+              width: isMinimized ? '40px' : '48px',
+              height: isMinimized ? '40px' : '48px',
+            }}
           >
-            {isMeSharing ? <MonitorOff size={22} /> : <Monitor size={22} />}
+            {isMeSharing ? <MonitorOff size={isMinimized ? 18 : 22} /> : <Monitor size={isMinimized ? 18 : 22} />}
           </button>
 
-          <button className="huddle-btn leave" onClick={handleLeave}>
-            <PhoneOff size={22} />
+          <button 
+            className="huddle-btn leave" 
+            onClick={handleLeave}
+            style={{ 
+              width: isMinimized ? '40px' : '48px',
+              height: isMinimized ? '40px' : '48px',
+            }}
+          >
+            <PhoneOff size={isMinimized ? 18 : 22} />
           </button>
         </div>
       </div>
