@@ -8,10 +8,14 @@ const PEER_PREFIX = 'hs-peer-';
 
 export default function usePeer(roomId) {
   const { user, teammates, setTeammate, removeTeammate, huddle, setSharing, joinHuddle } = useStore();
-  const peerRef = useRef(null);
-  const connectionsRef = useRef({}); // { peerId: DataConnection }
-  const callsRef = useRef({}); // { peerId: MediaConnection }
-  const [isReady, setIsReady] = useState(false);
+  // Use refs to access latest state in callbacks without triggering re-renders/re-initialization
+  const userRef = useRef(user);
+  const teammatesRef = useRef(teammates);
+  
+  useEffect(() => {
+    userRef.current = user;
+    teammatesRef.current = teammates;
+  }, [user, teammates]);
 
   // Broadcast data to all connected peers
   const broadcast = useCallback((data) => {
@@ -24,16 +28,15 @@ export default function usePeer(roomId) {
 
   // Handle incoming data
   const handleData = useCallback((conn, data) => {
+    const currentUser = userRef.current;
+    const currentTeammates = teammatesRef.current;
+
     switch (data.type) {
       case 'PRESENCE':
         // 1. Scan for Email Duplicates & Ghosts
-        // If someone joins with an email that already exists, 
-        // they are likely the same person reconnecting. Remove the old one.
-        Object.entries(teammates).forEach(([peerId, teammate]) => {
+        Object.entries(currentTeammates).forEach(([peerId, teammate]) => {
           if (teammate.email === data.profile.email && peerId !== conn.peer) {
-            console.log('Removing ghost duplicate for email:', teammate.email);
             removeTeammate(peerId);
-            // Close the old connection if it exists
             if (connectionsRef.current[peerId]) {
               connectionsRef.current[peerId].close();
               delete connectionsRef.current[peerId];
@@ -45,14 +48,14 @@ export default function usePeer(roomId) {
         setTeammate(conn.peer, { 
           ...data.profile, 
           status: data.status,
-          heartbeat: Date.now() // Track for ghost cleanup
+          heartbeat: Date.now()
         });
 
         if (data.isInitial) {
            conn.send({
              type: 'PRESENCE',
-             profile: user,
-             status: user?.status || 'Available',
+             profile: currentUser,
+             status: currentUser?.status || 'Available',
              isInitial: false
            });
         }
@@ -62,7 +65,7 @@ export default function usePeer(roomId) {
         break;
       case 'PEER_LIST':
         data.peers.forEach((peerId) => {
-          if (peerId !== peerRef.current.id && !connectionsRef.current[peerId]) {
+          if (peerId !== peerRef.current?.id && !connectionsRef.current[peerId]) {
             connectToPeer(peerId);
           }
         });
@@ -70,50 +73,42 @@ export default function usePeer(roomId) {
       case 'REQUEST_SYNC':
         conn.send({
            type: 'PEER_LIST',
-           peers: [peerRef.current.id, ...Object.keys(connectionsRef.current)]
+           peers: [peerRef.current?.id, ...Object.keys(connectionsRef.current)]
         });
         break;
       default:
         console.log('Data received:', data.type);
     }
-  }, [user, teammates, setTeammate, removeTeammate]);
+  }, [setTeammate, removeTeammate]); // Stable dependencies
 
-  // Ghost Lifecycle Cleanup (Interval)
+  // Ghost Lifecycle Cleanup
   useEffect(() => {
     const cleanupInterval = setInterval(() => {
       const now = Date.now();
-      Object.entries(teammates).forEach(([peerId, data]) => {
-        // If no heartbeat for 30 seconds, treat as a ghost
+      Object.entries(teammatesRef.current).forEach(([peerId, data]) => {
         if (data.heartbeat && now - data.heartbeat > 30000) {
-          console.log('Ghost cleanup for:', peerId);
           removeTeammate(peerId);
         }
       });
-      
-      // Also send our own heartbeat to everyone
       broadcast({ type: 'HEARTBEAT' });
-    }, 15000); // Check every 15s
+    }, 15000);
 
     return () => clearInterval(cleanupInterval);
-  }, [teammates, removeTeammate, broadcast]);
+  }, [removeTeammate, broadcast]);
 
   const connectToPeer = useCallback((peerId, isInitial = true) => {
-    // Already connected or trying to connect to ourselves
-    if (connectionsRef.current[peerId] || peerId === peerRef.current?.id) return;
+    if (!peerRef.current || connectionsRef.current[peerId] || peerId === peerRef.current.id) return;
 
     const conn = peerRef.current.connect(peerId);
-    connectionsRef.current[peerId] = conn; // Track immediately to prevent double-connect
+    connectionsRef.current[peerId] = conn;
 
     conn.on('open', () => {
-      // Send our profile upon connection
       conn.send({
         type: 'PRESENCE',
-        profile: user,
-        status: user?.status || 'Available',
+        profile: userRef.current,
+        status: userRef.current?.status || 'Available',
         isInitial: isInitial
       });
-      
-      // If we are joining someone, ask them for their peer list too (Mesh expansion)
       conn.send({ type: 'REQUEST_SYNC' });
     });
 
@@ -126,66 +121,55 @@ export default function usePeer(roomId) {
       delete connectionsRef.current[peerId];
       removeTeammate(peerId);
     });
-  }, [user, handleData, removeTeammate]);
+  }, [handleData, removeTeammate]); // Stable dependencies
 
   useEffect(() => {
-    if (!roomId || !user) return;
+    if (!roomId) return;
 
-    const initPeer = async () => {
-      const seedId = `${SEED_PREFIX}${roomId}`;
-      const myId = `${PEER_PREFIX}${roomId}-${uuidv4().slice(0, 8)}`;
-      
-      // Try to connect to existing seed first
-      const peer = new Peer(myId); 
-      peerRef.current = peer;
+    const seedId = `${SEED_PREFIX}${roomId}`;
+    const myId = `${PEER_PREFIX}${roomId}-${uuidv4().slice(0, 8)}`;
+    
+    const peer = new Peer(myId); 
+    peerRef.current = peer;
 
-      peer.on('open', (id) => {
-        setIsReady(true);
-        // Always try to connect to the seed to join the mesh
-        connectToPeer(seedId);
+    peer.on('open', () => {
+      setIsReady(true);
+      connectToPeer(seedId);
+    });
+
+    peer.on('connection', (conn) => {
+      conn.on('open', () => {
+         connectionsRef.current[conn.peer] = conn;
       });
+      conn.on('data', (data) => handleData(conn, data));
+    });
 
-      peer.on('connection', (conn) => {
+    const trySeed = new Peer(seedId);
+    trySeed.on('open', () => {
+      trySeed.on('connection', (conn) => {
         conn.on('open', () => {
-           connectionsRef.current[conn.peer] = conn;
-        });
-        conn.on('data', (data) => handleData(conn, data));
-      });
-
-      // Handle the case where WE might need to become the seed if it doesn't exist
-      // In a real P2P app, the first one becomes the seed.
-      // If connect to seed fails, we try to create the seed.
-      const trySeed = new Peer(seedId);
-      trySeed.on('open', () => {
-        console.log('I am the new Seed');
-        // We are the seed, handle connections
-        trySeed.on('connection', (conn) => {
-          conn.on('open', () => {
-            connectionsRef.current[conn.peer] = conn;
-            // Send current peer list to allow new joiner to mesh
-            conn.send({
-              type: 'PEER_LIST',
-              peers: Object.keys(connectionsRef.current)
-            });
+          connectionsRef.current[conn.peer] = conn;
+          conn.send({
+            type: 'PEER_LIST',
+            peers: Object.keys(connectionsRef.current)
           });
-          conn.on('data', (d) => handleData(conn, d));
         });
+        conn.on('data', (d) => handleData(conn, d));
       });
-      trySeed.on('error', (err) => {
-        if (err.type === 'unavailable-id') {
-           trySeed.destroy(); // Seed already exists, that's fine
-        }
-      });
-    };
-
-    initPeer();
+    });
+    trySeed.on('error', (err) => {
+      if (err.type === 'unavailable-id') {
+         trySeed.destroy();
+      }
+    });
 
     return () => {
       if (peerRef.current) {
         peerRef.current.destroy();
+        peerRef.current = null;
       }
     };
-  }, [roomId, user, connectToPeer, handleData]);
+  }, [roomId]); // ONLY restart when the ROOM changes
 
   // Sync status changes
   useEffect(() => {
