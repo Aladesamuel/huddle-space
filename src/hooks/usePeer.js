@@ -7,7 +7,11 @@ const SEED_PREFIX = 'hs-seed-';
 const PEER_PREFIX = 'hs-peer-';
 
 export default function usePeer(roomId) {
-  const { user, teammates, setTeammate, removeTeammate, huddle, setSharing, joinHuddle } = useStore();
+  const { 
+    user, teammates, setTeammate, removeTeammate,
+    joinHuddle, addHuddleMember, leaveHuddle, huddle,
+    setHuddleInvite, setSharing, setMuted
+  } = useStore();
   const peerRef = useRef(null);
   const connectionsRef = useRef({}); // { peerId: DataConnection }
   const [isReady, setIsReady] = useState(false);
@@ -73,6 +77,66 @@ export default function usePeer(roomId) {
            peers: [peerRef.current?.id, ...Object.keys(connectionsRef.current)]
         });
         break;
+
+      // ──── HUDDLE SIGNALING ────
+      case 'HUDDLE_INVITE': {
+        // Someone wants to start a huddle with us
+        const { fromPeerId, fromName, huddleId } = data;
+        const store = useStore.getState();
+        if (store.huddle.active) {
+          // Already in a huddle – auto-add sender as a new member
+          store.addHuddleMember(fromPeerId);
+          // Confirm back that we accepted
+          conn.send({ type: 'HUDDLE_ACCEPT', fromPeerId: peerRef.current?.id, huddleId });
+        } else {
+          // Show invite popup to this user
+          store.setHuddleInvite({ fromPeerId, fromName, huddleId, conn });
+        }
+        break;
+      }
+      case 'HUDDLE_ACCEPT': {
+        // Someone accepted our invite (or was added)
+        const store = useStore.getState();
+        const { fromPeerId, huddleId } = data;
+        if (store.huddle.active) {
+          store.addHuddleMember(fromPeerId);
+        } else {
+          // We were the initiator – start the huddle
+          store.joinHuddle([conn.peer, fromPeerId]);
+        }
+        // Tell everyone else in the huddle a new person joined
+        broadcast({ type: 'HUDDLE_JOIN', newPeerId: fromPeerId, huddleId });
+        break;
+      }
+      case 'HUDDLE_JOIN': {
+        // A peer was added to the huddle by somebody else – update our view
+        const store = useStore.getState();
+        if (store.huddle.active) {
+          store.addHuddleMember(data.newPeerId);
+        }
+        break;
+      }
+      case 'HUDDLE_LEAVE': {
+        // A peer left the huddle
+        const store = useStore.getState();
+        const remaining = store.huddle.members.filter(id => id !== conn.peer);
+        if (remaining.length === 0) {
+          store.leaveHuddle();
+        } else {
+          store.joinHuddle(remaining);
+        }
+        break;
+      }
+      case 'SHARING_STARTED': {
+        const store = useStore.getState();
+        store.setSharing(true, data.peerId);
+        break;
+      }
+      case 'SHARING_STOPPED': {
+        const store = useStore.getState();
+        store.setSharing(false, null);
+        break;
+      }
       default:
         console.log('Update:', data.type);
     }
@@ -182,5 +246,5 @@ export default function usePeer(roomId) {
     }
   }, [user?.status, isReady, broadcast]);
 
-  return { peer: peerRef.current, isReady, broadcast };
+  return { peer: peerRef.current, isReady, broadcast, connectionsRef };
 }

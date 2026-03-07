@@ -29,13 +29,20 @@ const useStore = create(
       // Huddle State
       huddle: {
         active: false,
-        members: [], // List of peerIds
+        members: [], // List of peerIds in the huddle
         isMuted: false,
         isSharing: false,
-        streamerId: null, // Who is sharing screen
+        streamerId: null,
       },
+      // Pending invite from another peer
+      huddleInvite: null, // { fromPeerId, fromName, huddleId }
+      setHuddleInvite: (invite) => set({ huddleInvite: invite }),
       joinHuddle: (peerIds) => set((state) => ({
-        huddle: { ...state.huddle, active: true, members: peerIds }
+        huddle: { ...state.huddle, active: true, members: Array.from(new Set(peerIds)) },
+        huddleInvite: null,
+      })),
+      addHuddleMember: (peerId) => set((state) => ({
+        huddle: { ...state.huddle, members: Array.from(new Set([...state.huddle.members, peerId])) }
       })),
       leaveHuddle: () => set((state) => ({
         huddle: { ...state.huddle, active: false, members: [], isSharing: false, streamerId: null }

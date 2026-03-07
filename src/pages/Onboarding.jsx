@@ -18,26 +18,28 @@ export default function Onboarding() {
   const navigate = useNavigate();
   const { setUser, setOffice } = useStore();
 
-  const [officeData, setOfficeData] = useState(null);
+  const { officeData, error: parseError } = React.useMemo(() => {
+    try {
+      const query = new URLSearchParams(hash.replace('#', '?'));
+      const dataStr = query.get('data');
+      if (dataStr) {
+        return { officeData: JSON.parse(atob(dataStr)), error: '' };
+      }
+      return { officeData: null, error: '' };
+    } catch (e) {
+      console.error('Failed to parse office data:', e);
+      return { officeData: null, error: 'Invalid invite link.' };
+    }
+  }, [hash]);
+
   const [userName, setUserName] = useState('');
   const [userEmail, setUserEmail] = useState('');
   const [password, setPassword] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    try {
-      const query = new URLSearchParams(hash.replace('#', '?'));
-      const dataStr = query.get('data');
-      if (dataStr) {
-        const decoded = JSON.parse(atob(dataStr));
-        setOfficeData(decoded);
-      }
-    } catch (e) {
-      console.error('Failed to parse office data:', e);
-      setError('Invalid invite link.');
-    }
-  }, [hash]);
+  // Combine manual errors with parse errors
+  const activeError = error || parseError;
 
   const handleJoin = (e) => {
     e.preventDefault();

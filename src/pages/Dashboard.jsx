@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Users, Info, Copy, Share2, Plus } from 'lucide-react';
+import { Users, Info, Share2 } from 'lucide-react';
+import { v4 as uuidv4 } from 'uuid';
 import useStore from '../store/useStore';
 import usePeer from '../hooks/usePeer';
 import HuddlePopup from '../components/HuddlePopup';
@@ -8,14 +9,26 @@ import HuddlePopup from '../components/HuddlePopup';
 export default function Dashboard() {
   const { roomId } = useParams();
   const { user, office, teammates, joinHuddle, huddle } = useStore();
-  const { isReady, broadcast, peer } = usePeer(roomId);
+  const { isReady, broadcast, peer, connectionsRef } = usePeer(roomId);
   const [showRules, setShowRules] = useState(false);
 
   const handleTapToTalk = (peerId) => {
     const target = teammates[peerId];
+    if (huddle.active) {
+      alert(`${target?.name || 'Teammate'} is already in the huddle or invite sent.`);
+      return;
+    }
     if (target?.status === 'Available') {
-      // Logic to start huddle
-      broadcast({ type: 'HUDDLE_INVITE', from: user.id });
+      const huddleId = uuidv4().slice(0, 8);
+      // Tell the target peer we want to huddle
+      const conn = connectionsRef?.current?.[peerId];
+      if (conn && conn.open) {
+        conn.send({ type: 'HUDDLE_INVITE', fromPeerId: peer?.id, fromName: user?.name, huddleId });
+      } else {
+        // Fallback: broadcast to all (target will self-identify)
+        broadcast({ type: 'HUDDLE_INVITE', fromPeerId: peer?.id, fromName: user?.name, huddleId, targetPeerId: peerId });
+      }
+      // Optimistically open huddle on our end
       joinHuddle([peerId]);
     } else {
       alert(`${target?.name || 'Teammate'} is currently ${target?.status || 'Busy'}.`);
@@ -95,7 +108,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      <HuddlePopup peer={peer} broadcast={broadcast} />
+      <HuddlePopup peer={peer} broadcast={broadcast} connectionsRef={connectionsRef} />
       
       {!isReady && (
         <div style={{ 

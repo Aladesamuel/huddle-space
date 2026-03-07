@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useStore from '../store/useStore';
+
 
 export default function Home() {
   const [name, setName] = useState('');
