@@ -26,9 +26,28 @@ export default function usePeer(roomId) {
   const handleData = useCallback((conn, data) => {
     switch (data.type) {
       case 'PRESENCE':
-        setTeammate(conn.peer, { ...data.profile, status: data.status });
-        // If they sent presence, and it's a new connection, reply with OUR presence
-        // to ensure they see us if we were already here.
+        // 1. Scan for Email Duplicates & Ghosts
+        // If someone joins with an email that already exists, 
+        // they are likely the same person reconnecting. Remove the old one.
+        Object.entries(teammates).forEach(([peerId, teammate]) => {
+          if (teammate.email === data.profile.email && peerId !== conn.peer) {
+            console.log('Removing ghost duplicate for email:', teammate.email);
+            removeTeammate(peerId);
+            // Close the old connection if it exists
+            if (connectionsRef.current[peerId]) {
+              connectionsRef.current[peerId].close();
+              delete connectionsRef.current[peerId];
+            }
+          }
+        });
+
+        // 2. Set/Update teammate with new data
+        setTeammate(conn.peer, { 
+          ...data.profile, 
+          status: data.status,
+          heartbeat: Date.now() // Track for ghost cleanup
+        });
+
         if (data.isInitial) {
            conn.send({
              type: 'PRESENCE',
@@ -38,8 +57,10 @@ export default function usePeer(roomId) {
            });
         }
         break;
+      case 'HEARTBEAT':
+        setTeammate(conn.peer, { heartbeat: Date.now() });
+        break;
       case 'PEER_LIST':
-        // Seed or Peer sending us a list of other peers to connect to
         data.peers.forEach((peerId) => {
           if (peerId !== peerRef.current.id && !connectionsRef.current[peerId]) {
             connectToPeer(peerId);
@@ -47,7 +68,6 @@ export default function usePeer(roomId) {
         });
         break;
       case 'REQUEST_SYNC':
-        // Someone is asking for everyone we know
         conn.send({
            type: 'PEER_LIST',
            peers: [peerRef.current.id, ...Object.keys(connectionsRef.current)]
@@ -56,9 +76,29 @@ export default function usePeer(roomId) {
       default:
         console.log('Data received:', data.type);
     }
-  }, [user, setTeammate]);
+  }, [user, teammates, setTeammate, removeTeammate]);
+
+  // Ghost Lifecycle Cleanup (Interval)
+  useEffect(() => {
+    const cleanupInterval = setInterval(() => {
+      const now = Date.now();
+      Object.entries(teammates).forEach(([peerId, data]) => {
+        // If no heartbeat for 30 seconds, treat as a ghost
+        if (data.heartbeat && now - data.heartbeat > 30000) {
+          console.log('Ghost cleanup for:', peerId);
+          removeTeammate(peerId);
+        }
+      });
+      
+      // Also send our own heartbeat to everyone
+      broadcast({ type: 'HEARTBEAT' });
+    }, 15000); // Check every 15s
+
+    return () => clearInterval(cleanupInterval);
+  }, [teammates, removeTeammate, broadcast]);
 
   const connectToPeer = useCallback((peerId, isInitial = true) => {
+    // Already connected or trying to connect to ourselves
     if (connectionsRef.current[peerId] || peerId === peerRef.current?.id) return;
 
     const conn = peerRef.current.connect(peerId);
