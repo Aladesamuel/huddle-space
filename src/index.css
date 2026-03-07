@@ -568,7 +568,7 @@ textarea.form-input { resize: vertical; }
   border-radius: var(--r-btn); padding: 13px 16px;
   font-size: 13px; color: #f48771; line-height: 1.5;
 }
-/* ── Responsive Design ──────────────────────────────────────────────────── */
+/* ── True Mobile-Friendly Ergnomics ────────────────────────────────────── */
 
 /* Tablet Optimization */
 @media (max-width: 1024px) {
@@ -578,89 +578,122 @@ textarea.form-input { resize: vertical; }
   }
 }
 
-/* Mobile Overhaul */
+/* Mobile App-Like Overhaul */
 @media (max-width: 768px) {
   :root {
-    --sidebar-w: 0px; /* Hide sidebar space */
+    --sidebar-w: 0px;
   }
 
-  /* Transform sidebar into a top bar or drawer icon */
+  /* 1. Prevent Auto-Zoom on Inputs */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* 2. Sidebar transforms into a Bottom Tab Bar */
   .sidebar {
     width: 100% !important;
-    height: 56px !important;
+    height: 64px !important;
     flex-direction: row !important;
-    padding: 0 16px !important;
-    bottom: auto !important;
+    padding: 0 20px !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
     border-right: none !important;
-    border-bottom: 1px solid var(--border) !important;
-    justify-content: space-between !important;
-    background: rgba(28, 30, 33, 0.95) !important;
-    backdrop-filter: blur(12px);
+    border-top: 1px solid var(--border) !important;
+    justify-content: space-around !important;
+    background: rgba(26, 28, 30, 0.98) !important;
+    backdrop-filter: blur(20px);
+    z-index: 1000;
+    box-shadow: 0 -4px 20px rgba(0,0,0,0.4);
   }
 
-  .sidebar-toggle-floating { display: none !important; }
-  .sidebar-collapse-btn { display: none !important; }
-  .sidebar-spacer { display: none !important; }
-  .sidebar-btn { width: 40px !important; height: 40px !important; }
-  
-  /* Layout shifts */
+  .sidebar-logo, .sidebar-collapse-btn, .sidebar-spacer, .sidebar-toggle-floating { 
+    display: none !important; 
+  }
+
+  .sidebar-btn {
+    width: 48px !important; /* Larger touch target */
+    height: 48px !important;
+    border-radius: 50% !important;
+  }
+
+  /* 3. Main content adjustments */
   main {
     margin-left: 0 !important;
-    padding-top: 56px !important; /* Space for top bar */
+    padding-bottom: 74px !important; /* Space for bottom nav */
+    padding-top: 0 !important;
   }
 
   .page-header {
-    padding: 16px !important;
-    height: auto !important;
-    min-height: 56px !important;
-    flex-direction: column !important;
-    align-items: flex-start !important;
+    padding: 24px 20px 16px !important;
+    border-bottom: none !important;
+    background: transparent !important;
+    flex-direction: row !important;
+    align-items: center !important;
+  }
+  .page-header h1 { font-size: 24px !important; }
+
+  .page-content {
+    padding: 0 16px 160px !important; /* Extra bottom padding for stacked bars */
+  }
+
+  /* 4. Grid: 2 columns with generous padding */
+  .presence-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 12px !important;
+  }
+  .presence-tile {
+    padding: 28px 14px 20px !important;
+    border-radius: 24px !important;
+  }
+  .tile-avatar {
+    width: 70px !important;
+    height: 70px !important;
+    font-size: 32px !important;
+  }
+  .tile-name { font-size: 15px !important; }
+  .tile-role { top: 10px !important; left: 10px !important; padding: 4px 8px !important; font-size: 9px !important; }
+
+  /* 5. Ergonomic Huddle Bar — Elevated for thumb reachability */
+  .huddle-bar {
+    left: 12px !important;
+    right: 12px !important;
+    bottom: 78px !important; /* Sits cleanly above the bottom navigation */
+    height: 80px !important;
+    border-radius: 24px !important;
+    background: var(--bg-ctrl) !important;
+    border: 1px solid var(--border-hi) !important;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+    padding: 0 12px !important;
     gap: 12px !important;
   }
   
-  .page-content {
-    padding: 0 16px 120px !important;
-  }
+  .huddle-members, .huddle-status { display: none !important; }
+  .ctrl-group { gap: 16px !important; }
+  .ctrl-icon { width: 48px !important; height: 48px !important; }
+  .ctrl-label { display: none !important; }
 
-  /* Grid: 2 columns on mobile */
-  .presence-grid {
-    grid-template-columns: 1fr 1fr !important;
-    gap: 10px !important;
-  }
-  .presence-tile {
-    padding: 24px 12px 18px !important;
-  }
-  .tile-avatar {
-    width: 64px !important;
-    height: 64px !important;
-    font-size: 28px !important;
-  }
-  .tile-name { font-size: 14px !important; }
-  .tile-role { top: 8px !important; left: 8px !important; padding: 4px 8px !important; font-size: 9px !important; }
-
-  .huddle-bar {
-    left: 0 !important;
-    height: 72px !important;
-    padding: 0 8px !important;
-    gap: 8px !important;
-  }
-  .huddle-members, .huddle-status { display: none !important; } /* Hide side elements to save space */
-  .ctrl-icon { width: 44px !important; height: 44px !important; }
-  .ctrl-label { display: none !important; } /* Hide labels on mobile buttons */
-  
-  /* Forms on Mobile */
-  .auth-card {
-    padding: 24px 20px !important;
-    width: 95% !important;
-  }
-
+  /* 6. Mobile Screen Viewer */
   .screen-viewer {
-    width: 98vw !important;
-    top: 66px !important;
-    left: 1vw !important;
+    width: 100vw !important;
+    height: auto !important;
+    top: 0 !important;
+    left: 0 !important;
     transform: none !important;
+    border-radius: 0 !important;
+    z-index: 1100;
   }
-  
+  .screen-viewer-bar { padding: 12px 16px !important; }
+
+  /* Forms */
+  .auth-card {
+    width: 100% !important;
+    height: 100vh !important;
+    border-radius: 0 !important;
+    border: none !important;
+    padding: 40px 24px !important;
+  }
+
   .share-badge {
     top: 64px !important;
     font-size: 11px !important;
