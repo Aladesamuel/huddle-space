@@ -15,7 +15,47 @@ export default function HuddlePopup({
   const [showAddMenu, setShowAddMenu]   = useState(false);
   const [screenFull,  setScreenFull]    = useState(false);
   const [isMinimized, setIsMinimized]   = useState(false);
+  const [position, setPosition]         = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging]     = useState(false);
+  const dragStartRef = useRef({ x: 0, y: 0 });
+
   const audioStartedRef = useRef(false);
+
+  // ─── Drag Logic ────────────────────────────────────────────────────────────
+  const handleMouseDown = (e) => {
+    // Don't drag if clicking buttons
+    if (e.target.closest('button')) return;
+    
+    setIsDragging(true);
+    dragStartRef.current = {
+      x: e.clientX - position.x,
+      y: e.clientY - position.y
+    };
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      setPosition({
+        x: e.clientX - dragStartRef.current.x,
+        y: e.clientY - dragStartRef.current.y
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging]);
 
   // ─── Start audio when huddle activates ────────────────────────────────────
   useEffect(() => {
@@ -149,18 +189,33 @@ export default function HuddlePopup({
       )}
 
       {/* ── Huddle Overlay ── */}
-      <div className="huddle-overlay" style={{ height: isMinimized ? 'auto' : 'initial' }}>
-        <div className="huddle-header">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ color: 'var(--success)', display: 'flex' }}><Mic size={14} /></span>
-            <span>HUDDLE · {huddle.members.length + 1} PEOPLE</span>
+      <div 
+        className="huddle-overlay" 
+        style={{ 
+          height: isMinimized ? 'auto' : 'initial',
+          transform: `translate(${position.x}px, ${position.y}px)`,
+          transition: isDragging ? 'none' : 'transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s ease',
+          userSelect: isDragging ? 'none' : 'auto'
+        }}
+      >
+        <div 
+          className="huddle-header" 
+          onMouseDown={handleMouseDown}
+          style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', pointerEvents: 'none' }}>
+            <span style={{ color: 'var(--success)', display: 'flex' }}><Mic size={14} strokeWidth={3} /></span>
+            <span style={{ letterSpacing: '0.5px' }}>HUDDLE · {huddle.members.length + 1}</span>
           </div>
-          <button 
-            onClick={() => setIsMinimized(!isMinimized)}
-            style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.5)', cursor: 'pointer', display: 'flex' }}
-          >
-            {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
-          </button>
+          <div style={{ display: 'flex', gap: '4px' }}>
+            <button 
+              onClick={() => setIsMinimized(!isMinimized)}
+              style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', padding: '4px' }}
+              title={isMinimized ? "Expand" : "Minimize"}
+            >
+              {isMinimized ? <Maximize2 size={16} /> : <Minimize2 size={16} />}
+            </button>
+          </div>
         </div>
 
         {!isMinimized && (
