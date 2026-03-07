@@ -188,17 +188,18 @@ export default function usePeer(roomId) {
         }
         break;
       case 'PEER_LIST':
-        // Gossip protocol: try to connect to any peer we don't know yet
+        // Gossip protocol: ensure we are connected to every real participant in the room
         data.peers.forEach(pid => {
-          if (pid !== peerRef.current?.id && !connectionsRef.current[pid]) {
-            console.log('Discovered new peer via mesh:', pid);
+          if (pid && pid !== peerRef.current?.id && !connectionsRef.current[pid] && pid.startsWith(PEER_PREFIX)) {
+            console.log('Discovered participant via sync:', pid);
             connectToPeerRef.current?.(pid);
           }
         });
         break;
       case 'REQUEST_SYNC':
-        // Share our known peers with the requester
-        conn.send({ type: 'PEER_LIST', peers: [peerRef.current?.id, ...Object.keys(connectionsRef.current)] });
+        // Share only "Real" peer IDs (those with PEER_PREFIX) to keep the mesh clean
+        const realPeers = Object.keys(connectionsRef.current).filter(pid => pid.startsWith(PEER_PREFIX));
+        conn.send({ type: 'PEER_LIST', peers: [peerRef.current?.id, ...realPeers] });
         break;
       case 'HUDDLE_INVITE': {
         const store = useStore.getState();
@@ -396,15 +397,22 @@ export default function usePeer(roomId) {
     peer.on('open', (id) => {
       setIsReady(true);
       setActivePeer(peer);
-      // Wait a tiny bit for the networking layer to stabilize
-      setTimeout(() => connectToPeer(seedId), 1000);
+      // Aggressive discovery: first connect to seed, then broadcast arrival
+      setTimeout(() => {
+        connectToPeer(seedId);
+      }, 800);
     });
 
     peer.on('connection', conn => {
       conn.on('open', () => {
-        connectionsRef.current[conn.peer] = conn;
-        // Broadcast presence immediately to the new person
-        conn.send({ type: 'PRESENCE', profile: userRef.current, status: userRef.current?.status || 'Available', isInitial: false });
+        // Only accept data connections from other participants (Real IDs)
+        if (conn.peer.startsWith(PEER_PREFIX)) {
+          connectionsRef.current[conn.peer] = conn;
+          // Sync presence and trigger a mesh-wide peer sync
+          conn.send({ type: 'PRESENCE', profile: userRef.current, status: userRef.current?.status || 'Available', isInitial: false });
+          conn.send({ type: 'REQUEST_SYNC' }); 
+        }
+        
         conn.on('data', d => handleData(conn, d));
       });
       conn.on('close', () => {
@@ -425,37 +433,33 @@ export default function usePeer(roomId) {
       else answerAudioCall(call);
     });
 
-    // Try to become the Seed (Reliability anchor)
+    // ─── Seed Peer (Discovery Switchboard) ──────────────────────────────
     let seedPeer;
     try {
       seedPeer = new Peer(seedId, { debug: 1 });
       seedPeer.on('open', () => {
-        console.log('Registered as Seed Peer for this room.');
+        console.log('Bootstrapped as Room Seed.');
         seedPeer.on('connection', conn => {
           conn.on('open', () => {
-            connectionsRef.current[conn.peer] = conn;
-            // Seed provides the gateway to the existing mesh
-            conn.send({ type: 'PEER_LIST', peers: [myId, ...Object.keys(connectionsRef.current).filter(k => k !== conn.peer)] });
+            // Seed's only job: give the new person the REAL ID of the host
+            // They will then find everyone else via REQUEST_SYNC gossip
+            conn.send({ type: 'PEER_LIST', peers: [myId] });
+            // Close seed connection shortly after to keep things clean
+            setTimeout(() => conn.close(), 2000);
           });
-          conn.on('data', d => handleData(conn, d));
         });
       });
       seedPeer.on('error', err => {
-        if (err.type === 'unavailable-id') {
-          // Seed already exists, which is normal
-          seedPeer.destroy();
-        } else {
-          console.error('Seed Peer error:', err);
-        }
+        if (err.type === 'unavailable-id') seedPeer.destroy();
       });
     } catch (e) {
-      console.log('Seed initialization skipped');
+      console.log('Seed already active');
     }
 
     return () => {
       stopAudio();
       stopScreenShare();
-      peer.destroy();
+      if (peer && !peer.destroyed) peer.destroy();
       if (seedPeer && !seedPeer.destroyed) seedPeer.destroy();
       peerRef.current = null;
       setActivePeer(null);
