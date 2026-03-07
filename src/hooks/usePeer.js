@@ -8,7 +8,11 @@ const PEER_PREFIX = 'hs-peer-';
 
 export default function usePeer(roomId) {
   const { user, teammates, setTeammate, removeTeammate, huddle, setSharing, joinHuddle } = useStore();
-  // Use refs to access latest state in callbacks without triggering re-renders/re-initialization
+  const peerRef = useRef(null);
+  const connectionsRef = useRef({}); // { peerId: DataConnection }
+  const [isReady, setIsReady] = useState(false);
+
+  // Use refs to access latest state in callbacks without triggering re-renders
   const userRef = useRef(user);
   const teammatesRef = useRef(teammates);
   
@@ -29,12 +33,10 @@ export default function usePeer(roomId) {
   // Handle incoming data
   const handleData = useCallback((conn, data) => {
     const currentUser = userRef.current;
-    const currentTeammates = teammatesRef.current;
-
     switch (data.type) {
       case 'PRESENCE':
-        // 1. Scan for Email Duplicates & Ghosts
-        Object.entries(currentTeammates).forEach(([peerId, teammate]) => {
+        // Deduplicate: If same email, remove old peer
+        Object.entries(teammatesRef.current).forEach(([peerId, teammate]) => {
           if (teammate.email === data.profile.email && peerId !== conn.peer) {
             removeTeammate(peerId);
             if (connectionsRef.current[peerId]) {
@@ -44,12 +46,7 @@ export default function usePeer(roomId) {
           }
         });
 
-        // 2. Set/Update teammate with new data
-        setTeammate(conn.peer, { 
-          ...data.profile, 
-          status: data.status,
-          heartbeat: Date.now()
-        });
+        setTeammate(conn.peer, { ...data.profile, status: data.status, heartbeat: Date.now() });
 
         if (data.isInitial) {
            conn.send({
@@ -77,9 +74,9 @@ export default function usePeer(roomId) {
         });
         break;
       default:
-        console.log('Data received:', data.type);
+        console.log('Update:', data.type);
     }
-  }, [setTeammate, removeTeammate]); // Stable dependencies
+  }, [setTeammate, removeTeammate]);
 
   // Ghost Lifecycle Cleanup
   useEffect(() => {
@@ -100,6 +97,8 @@ export default function usePeer(roomId) {
     if (!peerRef.current || connectionsRef.current[peerId] || peerId === peerRef.current.id) return;
 
     const conn = peerRef.current.connect(peerId);
+    if (!conn) return;
+    
     connectionsRef.current[peerId] = conn;
 
     conn.on('open', () => {
@@ -121,10 +120,10 @@ export default function usePeer(roomId) {
       delete connectionsRef.current[peerId];
       removeTeammate(peerId);
     });
-  }, [handleData, removeTeammate]); // Stable dependencies
+  }, [handleData, removeTeammate]);
 
   useEffect(() => {
-    if (!roomId || !user) return; // Wait for user to be ready
+    if (!roomId || !user?.id) return;
 
     const seedId = `${SEED_PREFIX}${roomId}`;
     const myId = `${PEER_PREFIX}${roomId}-${uuidv4().slice(0, 8)}`;
@@ -133,7 +132,6 @@ export default function usePeer(roomId) {
     peerRef.current = peer;
 
     peer.on('open', (id) => {
-      console.log('Peer open:', id);
       setIsReady(true);
       connectToPeer(seedId);
     });
@@ -168,17 +166,18 @@ export default function usePeer(roomId) {
       if (peerRef.current) {
         peerRef.current.destroy();
         peerRef.current = null;
+        connectionsRef.current = {};
       }
     };
-  }, [roomId, user]); // Include user to re-run when profile is ready
+  }, [roomId, user?.id]); // Only restart when Room or User ID changes
 
   // Sync status changes
   useEffect(() => {
     if (isReady && user?.status) {
       broadcast({
         type: 'PRESENCE',
-        profile: user,
-        status: user.status
+        profile: userRef.current,
+        status: userRef.current.status
       });
     }
   }, [user?.status, isReady, broadcast]);
