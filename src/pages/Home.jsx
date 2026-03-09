@@ -38,7 +38,7 @@ export default function Home() {
         padding: '0 5vw',
         position: 'sticky',
         top: 0,
-        background: 'rgba(11, 12, 13, 0.8)',
+        background: 'rgba(255, 255, 255, 0.8)',
         backdropFilter: 'blur(12px)',
         zIndex: 1000,
         borderBottom: '1px solid var(--border)'

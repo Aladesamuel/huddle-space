@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Share2, Users, Info, Volume2, X, Mic, Infinity } from 'lucide-react';
+import { Infinity, Share2, Info, Users, Zap, Search, Calendar, Layout, UserCircle, LogOut } from 'lucide-react';
 import useStore from '../store/useStore';
 import usePeer from '../hooks/usePeer';
 import HuddleBar from '../components/HuddlePopup';
 import Branding, { MiniBranding } from '../components/Branding';
+
+const STATUS_COLOR = { Available: '#34a853', Busy: '#ea4335', 'On Break': '#fbbc04' };
 
 export default function Dashboard() {
   const { roomId } = useParams();
@@ -63,13 +65,11 @@ export default function Dashboard() {
         alignItems: 'center',
         justifyContent: 'space-between'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-          <MiniBranding size={22} fontSize={22} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+          <MiniBranding size={22} />
           
-          <div style={{ width: 1, height: 28, background: 'var(--border-hi)' }} />
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-ash)', fontWeight: 500 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-ash)', fontWeight: 600 }}>
               <div style={{ 
                 width: 8, height: 8, borderRadius: '50%', 
                 background: 'var(--green)',
@@ -84,11 +84,11 @@ export default function Dashboard() {
                 style={{ 
                   background: 'none', border: 'none', cursor: 'pointer', 
                   display: 'flex', alignItems: 'center', gap: 6, 
-                  fontSize: 13, color: 'var(--text-ghost)', padding: 0,
-                  transition: 'color 0.2s ease'
+                  fontSize: 12, color: 'var(--text-ghost)', padding: '4px 8px',
+                  borderRadius: 6, transition: 'all 0.2s ease'
                 }}
-                onMouseEnter={e => e.currentTarget.style.color = 'var(--blue)'}
-                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-ghost)'}
+                onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-ash)'; e.currentTarget.style.background = 'var(--bg-hover)'; }}
+                onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-ghost)'; e.currentTarget.style.background = 'transparent'; }}
               >
                 <Info size={14} /> Guidelines
               </button>
@@ -96,38 +96,91 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Right Actions */}
+        {/* User & Presence Actions */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button 
             className="btn-text" 
             onClick={copyInvite}
             style={{ 
               display: 'flex', alignItems: 'center', gap: 8, 
-              color: 'var(--text-ash)', fontSize: 14, fontWeight: 600,
-              padding: '6px 12px', borderRadius: 8, 
-              background: 'var(--bg-hover)'
+              color: 'var(--text-ash)', fontSize: 13, fontWeight: 700,
+              padding: '8px 16px', borderRadius: 10, 
+              background: 'var(--bg-hover)',
+              border: 'none', cursor: 'pointer'
             }}
           >
-            <Share2 size={16} /> Invite
+            <Share2 size={15} /> Invite
           </button>
 
-          <div style={{ 
-            height: 36, width: 1, background: 'var(--border)' 
-          }} />
+          <div style={{ height: 24, width: 1, background: 'var(--border)' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-ash)' }}>{user?.name}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500 }}>{user?.status}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            {/* Status Select Wrapped User Info */}
+            <div style={{ position: 'relative' }}>
+              <select
+                value={user?.status}
+                onChange={e => useStore.getState().updateStatus(e.target.value)}
+                style={{ 
+                  opacity: 0, position: 'absolute', inset: 0, width: '100%', height: '100%', 
+                  cursor: 'pointer', zIndex: 10 
+                }}
+              >
+                <option value="Available">Available</option>
+                <option value="Busy">Busy</option>
+                <option value="On Break">On Break</option>
+              </select>
+              
+              <div style={{ 
+                display: 'flex', alignItems: 'center', gap: 12, 
+                padding: '4px 8px', borderRadius: 12, 
+                background: 'var(--bg-hover)', 
+                transition: 'background 0.2s',
+                position: 'relative', zIndex: 1
+              }}>
+                <div style={{ textAlign: 'right' }}>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-ash)' }}>{user?.name}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.4px' }}>
+                    {user?.status}
+                  </div>
+                </div>
+                
+                <div style={{ position: 'relative' }}>
+                  <div style={{
+                    width: 36, height: 36, borderRadius: 10,
+                    background: user?.avatar?.bg || 'var(--bg-ctrl)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 18, border: '1.5px solid var(--border-hi)',
+                    overflow: 'hidden'
+                  }}>
+                    {user?.avatar?.icon}
+                  </div>
+                  {/* Status Indicator */}
+                  <div style={{
+                    position: 'absolute', bottom: -2, right: -2,
+                    width: 12, height: 12, borderRadius: '50%',
+                    background: STATUS_COLOR[user?.status] ?? '#9aa0a6',
+                    border: '2px solid var(--bg-raised)',
+                    boxShadow: `0 0 10px ${STATUS_COLOR[user?.status] ?? '#9aa0a6'}44`,
+                  }} />
+                </div>
+              </div>
             </div>
-            <div style={{
-              width: 36, height: 36, borderRadius: 10,
-              background: user?.avatar?.bg || 'var(--bg-tile)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 18, border: '1.5px solid var(--border-hi)'
-            }}>
-              {user?.avatar?.icon}
-            </div>
+
+            <button
+              onClick={() => { useStore.getState().setUser(null); window.location.href = '/'; }}
+              style={{
+                width: 36, height: 36, borderRadius: 10,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: 'rgba(217, 48, 37, 0.08)',
+                border: 'none', cursor: 'pointer',
+                color: 'var(--red)', transition: 'all 0.2s'
+              }}
+              title="Leave office"
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(217, 48, 37, 0.15)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(217, 48, 37, 0.08)'; }}
+            >
+              <LogOut size={18} />
+            </button>
           </div>
         </div>
       </div>
