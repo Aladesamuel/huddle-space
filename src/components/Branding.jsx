@@ -1,7 +1,7 @@
 import React from 'react';
 import { Infinity } from 'lucide-react';
 
-const LOGO_SRC = "file:///c:/Users/HP/.gemini/antigravity/brain/9c30d3be-eaf8-49c6-a49c-40ed1a19b35a/guddl_logo_1773044625587.png";
+const LOGO_SRC = "file:///C:/Users/HP/.gemini/antigravity/brain/9c30d3be-eaf8-49c6-a49c-40ed1a19b35a/guddl_logo_transparent_final_1773058028928.png";
 
 export default function Branding({ size = 42, spacing = 24, showText = true, showIcon = true }) {
   return (
