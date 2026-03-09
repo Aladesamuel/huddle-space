@@ -18,25 +18,16 @@ function Sidebar({ collapsed, setCollapsed }) {
   return (
     <nav className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`}>
 
-      {/* Branding */}
-      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'center' }}>
-        <MiniBranding size={18} fontSize={16} />
-      </div>
-
       {/* Office icon */}
       {user && inOffice && (
-        <button 
-          className="sidebar-btn active" 
-          title="Guddl."
-          style={{ 
-            background: 'var(--blue)', 
-            boxShadow: '0 0 20px var(--blue-glow)',
-            color: '#fff',
-            borderRadius: 14
-          }}
-        >
-          <Infinity size={22} strokeWidth={2.5} />
-        </button>
+        <div style={{ marginBottom: 12 }}>
+          <button 
+            className="sidebar-btn active" 
+            title="Guddl."
+          >
+            <Infinity size={22} strokeWidth={2.5} />
+          </button>
+        </div>
       )}
 
       <div className="sidebar-spacer" />

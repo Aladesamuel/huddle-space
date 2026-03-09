@@ -6,12 +6,12 @@ import Branding, { MiniBranding } from '../components/Branding';
 
 /* Dark-tinted avatar backgrounds so they look great on the dark theme */
 const AVATARS = [
-  { id: '1', icon: '👤', bg: 'hsl(230,60%,22%)', color: 'hsl(230,80%,75%)' },
-  { id: '2', icon: '💼', bg: 'hsl(40,60%,18%)',  color: 'hsl(40,90%,65%)'  },
-  { id: '3', icon: '🚀', bg: 'hsl(150,50%,15%)', color: 'hsl(150,70%,55%)' },
-  { id: '4', icon: '💡', bg: 'hsl(0,55%,18%)',   color: 'hsl(0,75%,68%)'   },
-  { id: '5', icon: '🎨', bg: 'hsl(270,50%,20%)', color: 'hsl(270,65%,72%)' },
-  { id: '6', icon: '🧠', bg: 'hsl(200,55%,15%)', color: 'hsl(200,75%,62%)' },
+  { id: '1', icon: '👤', bg: '#e8f0fe', color: '#1a73e8' },
+  { id: '2', icon: '💼', bg: '#fef7e0', color: '#f9ab00' },
+  { id: '3', icon: '🚀', bg: '#e6f4ea', color: '#188038' },
+  { id: '4', icon: '💡', bg: '#fce8e6', color: '#d93025' },
+  { id: '5', icon: '🎨', bg: '#f3e8fd', color: '#9333ea' },
+  { id: '6', icon: '🧠', bg: '#e2f5f9', color: '#007b83' },
 ];
 
 export default function Onboarding() {
