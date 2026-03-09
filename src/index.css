@@ -2,38 +2,42 @@
 
 /* ── Design Tokens ─────────────────────────────────────────────────────── */
 :root {
-  --bg:           #0b0c0d;
-  --bg-raised:    #141618;
-  --bg-tile:      #1c1e21;
-  --bg-tile-h:    #242629;
-  --bg-ctrl:      #181a1c;
-  --bg-hover:     rgba(255,255,255,0.05);
+  /* Google-esque Baseline */
+  --bg:           #0f1113;
+  --bg-raised:    #16181a;
+  --bg-tile:      #202124; /* Google Tile Color */
+  --bg-tile-h:    #2d2e31;
+  --bg-ctrl:      #1a1c1e;
+  --bg-hover:     rgba(255,255,255,0.04);
 
-  --text:         #f2f3f5;
-  --text-sub:     #8e9297;
-  --text-ghost:   #4f545c;
+  /* Ash & Text Tones */
+  --text:         #f1f3f4; /* Ash-white for dark mode */
+  --text-ash:     #bdc1c6; /* Ash-gray */
+  --text-sub:     #9aa0a6; /* Muted ash */
+  --text-ghost:   #5f6368; /* Faded ash */
 
   --border:       rgba(255,255,255,0.06);
   --border-hi:    rgba(255,255,255,0.12);
 
-  --blue:         #3b82f6;
-  --blue-glow:    rgba(59,130,246,0.3);
-  --blue-dim:     rgba(59,130,246,0.1);
-
-  --green:        #10b981;
-  --green-glow:   rgba(16,185,129,0.3);
-  --amber:        #f59e0b;
-  --red:          #ef4444;
-  --purple:       #8b5cf6;
+  /* Google Core Colors */
+  --blue:         #4285f4;
+  --red:          #ea4335;
+  --amber:        #fbbc05;
+  --green:        #34a853;
+  
+  --blue-glow:    rgba(66,133,244,0.25);
+  --blue-dim:     rgba(66,133,244,0.12);
+  --green-dim:    rgba(52,168,83,0.12);
+  --red-dim:      rgba(234,67,53,0.12);
 
   --r-tile:       22px;
-  --r-card:       18px;
-  --r-btn:        12px;
+  --r-card:       20px;
+  --r-btn:        14px;
   --r-pill:       999px;
 
-  --sidebar-w:    72px;
-  --header-h:     72px;
-  --shadow-lg:    0 12px 48px rgba(0,0,0,0.6);
+  --sidebar-w:    74px;
+  --header-h:     74px;
+  --shadow-lg:    0 16px 56px rgba(0,0,0,0.6);
 }
 
 /* ── Reset ─────────────────────────────────────────────────────────────── */

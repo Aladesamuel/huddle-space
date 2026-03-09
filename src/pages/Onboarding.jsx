@@ -63,15 +63,21 @@ export default function Onboarding() {
         {/* Branding pill */}
         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 36 }}>
           <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 10,
+            display: 'inline-flex', alignItems: 'center', gap: 12,
             background: 'var(--bg-raised)', border: '1px solid var(--border-hi)',
-            borderRadius: 16, padding: '10px 20px 10px 12px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            borderRadius: 18, padding: '10px 24px 10px 12px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
           }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ 
+              width: 36, height: 36, borderRadius: 10, 
+              background: 'var(--blue)', display: 'flex', 
+              alignItems: 'center', justifyContent: 'center',
+              boxShadow: '0 0 15px var(--blue-glow)',
+              transform: 'rotate(-5deg)'
+            }}>
               <Infinity size={22} color="#fff" strokeWidth={2.5} />
             </div>
-            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: 14, fontWeight: 900, color: 'var(--text)', letterSpacing: '0.2px' }}>
               {activeErr ? 'Access Forbidden' : (officeData?.n || 'Guddl.')}
             </span>
           </div>

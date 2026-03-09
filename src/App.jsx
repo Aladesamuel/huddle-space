@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Users, LogOut, PanelLeftClose, PanelLeftOpen, Infinity } from 'lucide-react';
 import Home from './pages/Home';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
 import useStore from './store/useStore';
+import Branding, { MiniBranding } from './components/Branding';
 import './index.css';
 
 const STATUS_COLOR = { Available: '#34a853', Busy: '#ea4335', 'On Break': '#fbbc04' };
@@ -17,14 +18,10 @@ function Sidebar({ collapsed, setCollapsed }) {
   return (
     <nav className={`sidebar${collapsed ? ' sidebar-collapsed' : ''}`}>
 
-      {/* Collapse button */}
-      <button
-        className="sidebar-btn sidebar-collapse-btn"
-        onClick={() => setCollapsed(c => !c)}
-        title="Collapse sidebar"
-      >
-        <PanelLeftClose size={20} />
-      </button>
+      {/* Branding */}
+      <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'center' }}>
+        <MiniBranding size={18} fontSize={16} />
+      </div>
 
       {/* Office icon */}
       {user && inOffice && (

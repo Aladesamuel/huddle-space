@@ -4,6 +4,7 @@ import { Share2, Users, Info, Volume2, X, Mic, Infinity } from 'lucide-react';
 import useStore from '../store/useStore';
 import usePeer from '../hooks/usePeer';
 import HuddleBar from '../components/HuddlePopup';
+import Branding, { MiniBranding } from '../components/Branding';
 
 export default function Dashboard() {
   const { roomId } = useParams();
@@ -11,6 +12,7 @@ export default function Dashboard() {
   const {
     isReady, broadcast, peer, connectionsRef,
     startAudio, stopAudio, setMicMuted,
+    startAudioShare, stopAudioShare, // Note: check if these are correct in the hook
     startScreenShare, stopScreenShare, remoteScreenStream,
   } = usePeer(roomId);
 
@@ -52,61 +54,81 @@ export default function Dashboard() {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', animation: 'fadeIn 0.4s ease' }}>
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="page-header" style={{ height: 'var(--header-h)', borderBottom: '1px solid var(--border)', padding: '0 24px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <div style={{
-            width: 42, height: 42, borderRadius: 12,
-            background: 'var(--blue)', display: 'flex',
-            alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 0 20px var(--blue-glow)', flexShrink: 0,
-            transition: 'transform 0.2s ease'
-          }} className="sidebar-logo-mark">
-            <Infinity size={24} color="#fff" />
-          </div>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--text)', lineHeight: 1, letterSpacing: '-0.7px' }}>
-              Guddl.
+      <div className="page-header" style={{ 
+        height: 'var(--header-h)', 
+        borderBottom: '1px solid var(--border)', 
+        padding: '0 32px',
+        background: 'var(--bg-raised)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
+          <MiniBranding size={22} fontSize={22} />
+          
+          <div style={{ width: 1, height: 28, background: 'var(--border-hi)' }} />
+          
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'var(--text-ash)', fontWeight: 500 }}>
+              <div style={{ 
+                width: 8, height: 8, borderRadius: '50%', 
+                background: 'var(--green)',
+                boxShadow: '0 0 10px var(--green-glow)'
+              }} />
+              {count + 1} present
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-sub)' }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: 'var(--green)', display: 'inline-block', boxShadow: '0 0 6px rgba(52,168,83,0.6)' }} />
-                {count + 1} online
-              </span>
-              {office?.rules && (
-                <button
-                  onClick={() => setShowRules(s => !s)}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4, fontSize: 13, color: 'var(--blue)', padding: 0 }}
-                >
-                  <Info size={13} /> Guidelines
-                </button>
-              )}
-            </div>
+            
+            {office?.rules && (
+              <button
+                onClick={() => setShowRules(s => !s)}
+                style={{ 
+                  background: 'none', border: 'none', cursor: 'pointer', 
+                  display: 'flex', alignItems: 'center', gap: 6, 
+                  fontSize: 13, color: 'var(--text-ghost)', padding: 0,
+                  transition: 'color 0.2s ease'
+                }}
+                onMouseEnter={e => e.currentTarget.style.color = 'var(--blue)'}
+                onMouseLeave={e => e.currentTarget.style.color = 'var(--text-ghost)'}
+              >
+                <Info size={14} /> Guidelines
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Right: my chip + invite */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            background: 'rgba(255,255,255,0.05)',
-            border: '1px solid var(--border-hi)',
-            borderRadius: 10, padding: '7px 14px 7px 10px',
-          }}>
+        {/* Right Actions */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <button 
+            className="btn-text" 
+            onClick={copyInvite}
+            style={{ 
+              display: 'flex', alignItems: 'center', gap: 8, 
+              color: 'var(--text-ash)', fontSize: 14, fontWeight: 600,
+              padding: '6px 12px', borderRadius: 8, 
+              background: 'var(--bg-hover)'
+            }}
+          >
+            <Share2 size={16} /> Invite
+          </button>
+
+          <div style={{ 
+            height: 36, width: 1, background: 'var(--border)' 
+          }} />
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-ash)' }}>{user?.name}</div>
+              <div style={{ fontSize: 11, color: 'var(--text-ghost)', fontWeight: 500 }}>{user?.status}</div>
+            </div>
             <div style={{
-              width: 30, height: 30, borderRadius: 8,
-              background: user?.avatar?.bg ?? 'rgba(255,255,255,0.08)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16,
+              width: 36, height: 36, borderRadius: 10,
+              background: user?.avatar?.bg || 'var(--bg-tile)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 18, border: '1.5px solid var(--border-hi)'
             }}>
               {user?.avatar?.icon}
             </div>
-            <div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text)', lineHeight: 1 }}>{user?.name}</div>
-              <div style={{ fontSize: 11, color: 'var(--text-sub)', marginTop: 1 }}>{user?.status}</div>
-            </div>
           </div>
-          <button className="btn btn-outline" onClick={copyInvite} style={{ height: 40, padding: '0 16px', borderRadius: 10 }}>
-            <Share2 size={14} /> Invite
-          </button>
         </div>
       </div>
 
