@@ -16,33 +16,29 @@ const useStore = create(
       setOffice: (office) => set({ office }),
 
       // Teammates in the room
-      teammates: {}, // { peerId: { name, email, avatar, status, lastSeen } }
-      setTeammate: (peerId, data) => set((state) => {
+      teammates: {}, // { email: { name, avatar, status, lastSeen, peerId } }
+      setTeammate: (email, data) => set((state) => {
+        if (!email) return state;
         const newTeammates = { ...state.teammates };
         
-        // ANTI-GHOSTING: If this update has an email, ensure no other peerId uses it
-        const incomingEmail = data.email || newTeammates[peerId]?.email;
-        if (incomingEmail) {
-          Object.keys(newTeammates).forEach(pid => {
-            // STRICT ANTI-GHOSTING: One email, one card.
-            // If another peer ID has this email, delete it immediately.
-            if (pid !== peerId && newTeammates[pid]?.email === incomingEmail) {
-              delete newTeammates[pid];
-            }
-          });
-        }
-
-        newTeammates[peerId] = { 
-          ...newTeammates[peerId], 
+        newTeammates[email] = { 
+          ...newTeammates[email], 
           ...data, 
           lastSeen: Date.now() 
         };
         
         return { teammates: newTeammates };
       }),
-      removeTeammate: (peerId) => set((state) => {
+      removeTeammate: (email) => set((state) => {
         const newTeammates = { ...state.teammates };
-        delete newTeammates[peerId];
+        delete newTeammates[email];
+        return { teammates: newTeammates };
+      }),
+      // Helper to clear teammate by peerId if email is unknown (fallback)
+      removeTeammateByPeerId: (peerId) => set((state) => {
+        const newTeammates = { ...state.teammates };
+        const email = Object.keys(newTeammates).find(e => newTeammates[e].peerId === peerId);
+        if (email) delete newTeammates[email];
         return { teammates: newTeammates };
       }),
 

@@ -69,22 +69,25 @@ export default function HuddleBar({
     leaveHuddle();
   };
 
-  const handleAddPerson = (peerId) => {
-    const conn = connectionsRef?.current?.[peerId];
-    if (conn?.open) {
-      conn.send({ type: 'HUDDLE_INVITE', fromPeerId: peer?.id, fromName: user?.name, huddleId: Date.now().toString() });
+  const handleAddPerson = (email) => {
+    const tm = teammates[email];
+    if (tm?.peerId) {
+      const conn = connectionsRef?.current?.[tm.peerId];
+      if (conn?.open) {
+        conn.send({ type: 'HUDDLE_INVITE', fromEmail: user?.email, fromName: user?.name, huddleId: Date.now().toString() });
+      }
     }
     setShowAddMenu(false);
   };
 
   const availableToAdd = Object.entries(teammates).filter(
-    ([pid, d]) => !huddle.members.includes(pid) && d.status === 'Available'
+    ([email, d]) => email !== user?.email && !huddle.members.includes(email) && d.status === 'Available'
   );
 
   if (!huddle.active) return null;
 
   const isMeSharing = huddle.isSharing && huddle.streamerId === peer?.id;
-  const sharerName  = huddle.streamerId === peer?.id ? 'You' : (teammates[huddle.streamerId]?.name ?? 'Someone');
+  const sharerName  = huddle.streamerId === peer?.id ? 'You' : (Object.values(teammates).find(t => t.peerId === huddle.streamerId)?.name ?? 'Someone');
 
   return (
     <>
@@ -153,13 +156,13 @@ export default function HuddleBar({
             {user?.avatar?.icon ?? user?.name?.[0]}
           </div>
           {/* Others */}
-          {huddle.members.map((mid, i) => {
-            const tm = teammates[mid];
+          {huddle.members.map((email, i) => {
+            const tm = teammates[email];
             return (
               <div
-                key={mid}
+                key={email}
                 className="huddle-member-bubble"
-                title={tm?.name ?? mid}
+                title={tm?.name ?? email}
                 style={{ background: tm?.avatar?.bg ?? 'rgba(255,255,255,0.1)', zIndex: huddle.members.length - i }}
               >
                 {tm?.avatar?.icon ?? tm?.name?.[0] ?? '?'}
@@ -211,8 +214,8 @@ export default function HuddleBar({
                 <div className="add-menu-heading">Available Teammates</div>
                 {availableToAdd.length === 0
                   ? <div style={{ fontSize: 13, color: 'var(--text-ghost)', padding: '4px 10px' }}>No one available</div>
-                  : availableToAdd.map(([pid, d]) => (
-                    <button key={pid} className="add-menu-item" onClick={() => handleAddPerson(pid)}>
+                  : availableToAdd.map(([email, d]) => (
+                    <button key={email} className="add-menu-item" onClick={() => handleAddPerson(email)}>
                       <span style={{ fontSize: 20 }}>{d.avatar?.icon ?? '👤'}</span>
                       <span style={{ fontWeight: 600 }}>{d.name}</span>
                     </button>

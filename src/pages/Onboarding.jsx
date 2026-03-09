@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
-import { Shield, Check, User, ArrowRight, Mail } from 'lucide-react';
+import { Shield, Check, User, ArrowRight, Mail, Infinity } from 'lucide-react';
 import useStore from '../store/useStore';
 
 /* Dark-tinted avatar backgrounds so they look great on the dark theme */
@@ -45,7 +45,7 @@ export default function Onboarding() {
       setError('Incorrect password.'); return;
     }
     setUser({ id: Math.random().toString(36).slice(2, 9), name: userName, email: userEmail, role: role.trim(), avatar, status: 'Available' });
-    setOffice({ name: officeData?.n ?? 'Virtual Office', rules: officeData?.r, id: roomId, p: officeData?.p, h: officeData?.h });
+    setOffice({ name: officeData?.n ?? 'Guddl.', rules: officeData?.r, id: roomId, p: officeData?.p, h: officeData?.h });
     navigate(`/office/${roomId}`);
   };
 
@@ -67,9 +67,11 @@ export default function Onboarding() {
             background: 'var(--bg-raised)', border: '1px solid var(--border-hi)',
             borderRadius: 999, padding: '7px 18px 7px 10px',
           }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>🎙</div>
+            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Infinity size={16} color="#fff" />
+            </div>
             <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
-              {activeErr ? 'Access Denied' : (officeData?.n ?? 'Virtual Office')}
+              {activeErr ? 'Access Denied' : (officeData?.n ?? 'Guddl.')}
             </span>
           </div>
         </div>
@@ -157,7 +159,7 @@ export default function Onboarding() {
             </div>
 
             <button className="btn btn-primary" style={{ width: '100%', height: 50, fontSize: 15, borderRadius: 12 }}>
-              Enter Office <ArrowRight size={16} />
+              Enter Guddl. <ArrowRight size={16} />
             </button>
           </form>
         )}

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
-import { Users, LogOut, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Users, LogOut, PanelLeftClose, PanelLeftOpen, Infinity } from 'lucide-react';
 import Home from './pages/Home';
 import Onboarding from './pages/Onboarding';
 import Dashboard from './pages/Dashboard';
@@ -28,8 +28,8 @@ function Sidebar({ collapsed, setCollapsed }) {
 
       {/* Office icon */}
       {user && inOffice && (
-        <button className="sidebar-btn active" title="Office">
-          <Users size={20} />
+        <button className="sidebar-btn active" title="Guddl.">
+          <Infinity size={20} />
         </button>
       )}
 

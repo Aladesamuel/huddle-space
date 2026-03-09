@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { LayoutGrid, Lock, Settings, Share2, ArrowRight, CheckCircle } from 'lucide-react';
+import { LayoutGrid, Lock, Settings, Share2, ArrowRight, CheckCircle, Infinity } from 'lucide-react';
 
 export default function Home() {
   const [name, setName]             = useState('');
@@ -27,19 +27,21 @@ export default function Home() {
         {/* Mark */}
         <div style={{ textAlign: 'center', marginBottom: 36 }}>
           <div style={{
-            width: 60, height: 60, borderRadius: 18,
+            width: 68, height: 68, borderRadius: 20,
             background: 'var(--blue)', display: 'flex',
             alignItems: 'center', justifyContent: 'center',
-            fontSize: 28, margin: '0 auto 20px',
-            boxShadow: '0 8px 28px var(--blue-glow)',
-          }}>🎙</div>
-          <h1 style={{ fontSize: 32, fontWeight: 700, letterSpacing: -0.5, color: 'var(--text)', marginBottom: 10 }}>
-            {inviteLink ? 'Your office is live' : 'Open a Virtual Office'}
+            margin: '0 auto 24px',
+            boxShadow: '0 8px 30px var(--blue-glow)',
+          }}>
+            <Infinity size={32} color="#fff" />
+          </div>
+          <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: -1, color: 'var(--text)', marginBottom: 12 }}>
+            {inviteLink ? 'Your Guddl. is live' : 'Welcome to Guddl.'}
           </h1>
-          <p style={{ color: 'var(--text-sub)', fontSize: 15, lineHeight: 1.6 }}>
+          <p style={{ color: 'var(--text-sub)', fontSize: 16, lineHeight: 1.6, maxWidth: 400, margin: '0 auto' }}>
             {inviteLink
-              ? 'Share the link below — your team can join in one click.'
-              : 'A persistent room where your team drops in, talks, and shares screens.'}
+              ? 'Share the link below — your team is one click away.'
+              : 'The persistent digital office where teams drop in, talk, and share naturally.'}
           </p>
         </div>
 
@@ -67,7 +69,7 @@ export default function Home() {
             </div>
 
             <button className="btn btn-primary" style={{ height: 52, fontSize: 15, borderRadius: 12, marginTop: 4 }} disabled={creating}>
-              {creating ? 'Creating…' : 'Create Office'} {!creating && <ArrowRight size={17} />}
+              {creating ? 'Starting Guddl. ' : 'Start Guddl.'} {!creating && <ArrowRight size={17} />}
             </button>
           </form>
         ) : (

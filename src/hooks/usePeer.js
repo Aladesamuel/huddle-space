@@ -168,25 +168,30 @@ export default function usePeer(roomId) {
     const currentUser = userRef.current;
     switch (data.type) {
       case 'PRESENCE':
-        // Don't add yourself to your own teammates list
+        // Don't add yourself to your own list
         if (data.profile.email === currentUser?.email) return;
         
-        // Update local teammate state (the Store now handles anti-ghosting by email)
-        setTeammate(conn.peer, { ...data.profile, status: data.status });
+        // Update local teammate state keyed by EMAIL
+        setTeammate(data.profile.email, { 
+          ...data.profile, 
+          status: data.status, 
+          peerId: conn.peer 
+        });
         // If it's an initial presence, send ours back immediately
         if (data.isInitial) {
           conn.send({ type: 'PRESENCE', profile: currentUser, status: currentUser?.status || 'Available', isInitial: false });
         }
         break;
-      case 'PULSE':
-        // Faster heartbeat rename for clarity
-        if (teammatesRef.current[conn.peer]) {
-          setTeammate(conn.peer, { heartbeat: Date.now(), status: data.status });
+      case 'PULSE': {
+        const email = Object.keys(teammatesRef.current).find(e => teammatesRef.current[e].peerId === conn.peer);
+        if (email) {
+          setTeammate(email, { status: data.status, peerId: conn.peer });
         } else {
-          // If we see a pulse from someone we don't know well, request full sync
+          // If we see a pulse from someone we don't know, ask for sync
           conn.send({ type: 'REQUEST_SYNC' });
         }
         break;
+      }
       case 'PEER_LIST':
         // Gossip protocol: ensure we are connected to every real participant in the room
         data.peers.forEach(pid => {
@@ -203,36 +208,36 @@ export default function usePeer(roomId) {
         break;
       case 'HUDDLE_INVITE': {
         const store = useStore.getState();
+        const fromEmail = data.fromEmail;
+        if (!fromEmail) break;
+
         if (store.huddle.active) {
           // If already in a huddle, just add this person and call them
-          store.addHuddleMember(data.fromPeerId);
-          callAudioPeer(data.fromPeerId);
+          store.addHuddleMember(fromEmail);
+          callAudioPeer(conn.peer);
         } else {
           // Receiver joins: must include the person who invited them so the UI shows 'Huddle · 2 people'
-          store.joinHuddle([data.fromPeerId]);
+          store.joinHuddle([fromEmail]);
           store.setMuted(true);
         }
-        conn.send({ type: 'HUDDLE_ACCEPT', fromPeerId: peerRef.current?.id });
+        conn.send({ type: 'HUDDLE_ACCEPT', fromEmail: currentUser?.email, fromPeerId: peerRef.current?.id });
         break;
       }
       case 'HUDDLE_ACCEPT': {
         const store = useStore.getState();
         // The initiator's huddle already has the target from handleTapToTalk, 
         // but let's ensure they are added if not already.
-        store.addHuddleMember(data.fromPeerId);
+        if (data.fromEmail) store.addHuddleMember(data.fromEmail);
+        callAudioPeer(data.fromPeerId || conn.peer);
         
         // Broadcast to everyone else in the office that a huddle has been formed/joined
         broadcast({ type: 'HUDDLE_JOIN', newPeerId: data.fromPeerId });
         break;
       }
-      case 'HUDDLE_JOIN': {
-        const store = useStore.getState();
-        // If I am in the huddle mentioned, or I am the one joining, update members
-        if (store.huddle.active && (store.huddle.members.includes(data.newPeerId) || data.newPeerId === peerRef.current?.id)) {
-          store.addHuddleMember(data.newPeerId);
-        }
+      case 'HUDDLE_JOIN':
+        // Huddle members should always be a list of unique EMAILS for the UI
+        useStore.getState().addHuddleMember(data.email);
         break;
-      }
       case 'HUDDLE_LEAVE': {
         const store = useStore.getState();
         audioCallsRef.current[conn.peer]?.close();
@@ -280,7 +285,7 @@ export default function usePeer(roomId) {
         // Short delay before removing teammate to handle transient drops/reconnects
         setTimeout(() => {
           if (!connectionsRef.current[peerId]) {
-            removeTeammate(peerId);
+            useStore.getState().removeTeammateByPeerId(peerId);
           }
         }, 500);
       }
@@ -335,22 +340,23 @@ export default function usePeer(roomId) {
   useEffect(() => {
     const id = setInterval(() => {
       const now = Date.now();
-      const pulseStatus = userRef.current?.status || 'Available';
+      const currentTeammates = useStore.getState().teammates;
       
-      // 1. Prune dead peers (Faster timeout: 12 seconds)
-      Object.entries(teammatesRef.current).forEach(([pid, d]) => {
-        if (d.heartbeat && now - d.heartbeat > 12000) {
-          console.log('Peer timed out:', pid);
-          removeTeammate(pid);
-          if (connectionsRef.current[pid]) {
+      // 1. Prune dead profiles by email
+      Object.entries(currentTeammates).forEach(([email, data]) => {
+        if (data.lastSeen && now - data.lastSeen > 12000) {
+          console.log('Teammate timed out:', email);
+          removeTeammate(email);
+          const pid = data.peerId;
+          if (pid && connectionsRef.current[pid]) {
             connectionsRef.current[pid].close();
             delete connectionsRef.current[pid];
           }
         }
       });
       
-      // 2. Send Pulse message to all active connections
-      broadcast({ type: 'PULSE', status: pulseStatus });
+      // 2. Local heartbeat update
+      broadcast({ type: 'PULSE', status: userRef.current?.status || 'Available' });
       
       // 3. Occasionally request sync to ensure mesh is complete
       if (Math.random() > 0.7) {
@@ -419,7 +425,10 @@ export default function usePeer(roomId) {
         if (connectionsRef.current[conn.peer] === conn) {
           delete connectionsRef.current[conn.peer];
           setTimeout(() => {
-            if (!connectionsRef.current[conn.peer]) removeTeammate(conn.peer);
+            if (!connectionsRef.current[conn.peer]) {
+              // Only remove from store if this was the last active session for that person
+              useStore.getState().removeTeammateByPeerId(conn.peer);
+            }
           }, 500);
         }
       });

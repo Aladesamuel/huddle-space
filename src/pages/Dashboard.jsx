@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Share2, Users, Info, Volume2, X, Mic } from 'lucide-react';
+import { Share2, Users, Info, Volume2, X, Mic, Infinity } from 'lucide-react';
 import useStore from '../store/useStore';
 import usePeer from '../hooks/usePeer';
 import HuddleBar from '../components/HuddlePopup';
@@ -18,17 +18,20 @@ export default function Dashboard() {
   const count = Object.keys(teammates).length;
 
   const handleTapToTalk = (peerId) => {
-    const target = teammates[peerId];
+    // Look up the identity by peerId to find the email
+    const email = Object.keys(teammates).find(e => teammates[e].peerId === peerId);
+    const target = teammates[email];
     if (huddle.active) { alert("You're already in an active huddle."); return; }
+    
     if (target?.status === 'Available') {
       const huddleId = Date.now().toString();
       const conn     = connectionsRef?.current?.[peerId];
       if (conn?.open) {
-        conn.send({ type: 'HUDDLE_INVITE', fromPeerId: peer?.id, fromName: user?.name, huddleId });
+        conn.send({ type: 'HUDDLE_INVITE', fromEmail: user?.email, fromName: user?.name, huddleId });
       } else {
-        broadcast({ type: 'HUDDLE_INVITE', fromPeerId: peer?.id, fromName: user?.name, huddleId, targetPeerId: peerId });
+        broadcast({ type: 'HUDDLE_INVITE', fromEmail: user?.email, fromName: user?.name, huddleId, targetPeerId: peerId });
       }
-      joinHuddle([peerId]);
+      joinHuddle([email]);
       useStore.getState().setMuted(false);
       startAudio([peerId], false);
     } else {
@@ -58,11 +61,11 @@ export default function Dashboard() {
             alignItems: 'center', justifyContent: 'center',
             boxShadow: '0 4px 14px var(--blue-glow)', flexShrink: 0,
           }}>
-            <Volume2 size={18} color="#fff" />
+            <Infinity size={22} color="#fff" />
           </div>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 17, color: 'var(--text)', lineHeight: 1.2 }}>
-              {office?.name || 'Virtual Office'}
+            <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text)', lineHeight: 1.2, letterSpacing: '-0.5px' }}>
+              Guddl.
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 13, color: 'var(--text-sub)' }}>
@@ -137,15 +140,15 @@ export default function Dashboard() {
             </div>
             <div className="presence-grid">
               {Object.entries(teammates)
-                .filter(([_, data]) => data.email !== user?.email)
-                .map(([peerId, data]) => {
-                const inHuddle  = huddle.active && huddle.members.includes(peerId);
+                .filter(([email]) => email !== user?.email)
+                .map(([email, data]) => {
+                const inHuddle  = huddle.active && huddle.members.includes(email);
                 const available = data.status === 'Available';
                 return (
                   <div
-                    key={peerId}
+                    key={email}
                     className={`presence-tile ${inHuddle ? 'in-huddle' : ''}`}
-                    onClick={() => handleTapToTalk(peerId)}
+                    onClick={() => handleTapToTalk(data.peerId)}
                     style={{ '--avatar-color': data.avatar?.color }}
                   >
                     {data.role && (
