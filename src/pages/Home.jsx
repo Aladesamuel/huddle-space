@@ -79,7 +79,7 @@ export default function Home() {
         }} />
 
         <div style={{ position: 'relative', zIndex: 1 }}>
-          <Branding size={80} spacing={40} fontSize={72} iconSize={42} />
+          <Branding size={80} spacing={40} fontSize={72} />
           
           <h2 style={{ 
             fontSize: 'clamp(32px, 6vw, 64px)', 
@@ -88,26 +88,26 @@ export default function Home() {
             marginTop: 24, 
             maxWidth: 880,
             lineHeight: 1.1,
-            color: 'var(--text)'
+            color: 'var(--text-ash)'
           }}>
             The persistent digital office for <span style={{ color: 'var(--blue)' }}>remote-first</span> teams.
           </h2>
 
           <p style={{ 
-            color: 'var(--text-sub)', 
-            fontSize: 'clamp(18px, 1.5vw, 22px)', 
+            color: 'var(--text-ghost)', 
+            fontSize: 'clamp(18px, 1.2vw, 20px)', 
             lineHeight: 1.6, 
-            maxWidth: 640, 
+            maxWidth: 600, 
             margin: '32px auto 48px',
             fontWeight: 500
           }}>
             Guddl. brings back the spontaneous collaboration of a physical office. 
-            No meetings, no calendars, just your team working together.
+            No meetings, no calendars, just your team working together with high-fidelity audio and presence.
           </p>
 
           <div style={{ display: 'flex', gap: 16, justifyContent: 'center', alignItems: 'center' }}>
-            <button className="btn btn-primary" style={{ height: 60, padding: '0 36px', fontSize: 18, borderRadius: 16 }} onClick={scrollToForm}>
-              Launch your office <ArrowRight size={20} />
+            <button className="btn btn-primary" style={{ height: 62, padding: '0 42px', fontSize: 18, borderRadius: 16, backgroundColor: 'var(--blue)', fontWeight: 800 }} onClick={scrollToForm}>
+              Launch Guddl. <ArrowRight size={20} />
             </button>
           </div>
 

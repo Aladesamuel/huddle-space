@@ -126,18 +126,23 @@ main {
   border-radius: 12px;
   display: flex; align-items: center; justify-content: center;
   background: transparent;
-  border: none;
+  border: 1px solid transparent;
   cursor: pointer;
-  color: var(--text-sub);
-  transition: background 0.15s ease, color 0.15s ease;
+  color: var(--text-ghost);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
-.sidebar-btn:hover { background: rgba(255,255,255,0.06); color: var(--text); }
-.sidebar-btn.active {
-  background: var(--blue);
-  color: #fff;
-  box-shadow: 0 4px 14px var(--blue-glow);
+.sidebar-btn:hover { 
+  background: var(--bg-hover); 
+  color: var(--text-ash); 
 }
+.sidebar-btn.active {
+  color: var(--blue);
+  background: var(--blue-dim);
+  border-color: rgba(66, 133, 244, 0.15);
+}
+.sidebar-btn svg { transition: transform 0.2s ease; }
+.sidebar-btn:active svg { transform: scale(0.9); }
 
 /* ── Page Header ───────────────────────────────────────────────────────── */
 .page-header {
@@ -187,16 +192,16 @@ main {
 .form-group { margin-bottom: 20px; }
 .form-group label {
   display: flex; align-items: center; gap: 6px;
-  font-size: 12px; font-weight: 600; letter-spacing: 0.6px;
-  text-transform: uppercase; color: var(--text-sub);
+  font-size: 11px; font-weight: 700; letter-spacing: 0.8px;
+  text-transform: uppercase; color: var(--text-ghost);
   margin-bottom: 8px;
 }
 .form-input {
   width: 100%; padding: 13px 16px;
-  background: rgba(255,255,255,0.04);
-  border: 1.5px solid var(--border-hi);
+  background: var(--bg-ctrl);
+  border: 1px solid var(--border-hi);
   border-radius: var(--r-btn);
-  font-family: inherit; font-size: 15px; color: var(--text);
+  font-family: inherit; font-size: 15px; color: var(--text-ash);
   outline: none; transition: border-color 0.2s, box-shadow 0.2s;
 }
 .form-input::placeholder { color: var(--text-ghost); }
@@ -216,23 +221,23 @@ textarea.form-input { resize: vertical; }
 /* Card — reference-style profile tile */
 .presence-tile {
   position: relative;
-  background: #1e2028;
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 18px;
-  padding: 28px 20px 22px;
+  background: var(--bg-tile);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px 20px;
   cursor: pointer;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
-  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  gap: 12px;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
 }
 .presence-tile:hover {
-  background: #252830;
-  border-color: rgba(255,255,255,0.13);
-  transform: translateY(-3px);
-  box-shadow: 0 12px 40px rgba(0,0,0,0.5);
+  background: var(--bg-tile-h);
+  border-color: var(--border-hi);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
 }
 .presence-tile.in-huddle {
   border-color: var(--green);

@@ -154,9 +154,9 @@ export default function Dashboard() {
       <div className="page-content">
         {count > 0 && (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 18 }}>
-              <Users size={14} color="var(--text-sub)" />
-              <span style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-sub)', textTransform: 'uppercase', letterSpacing: '1px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, paddingBottom: 16, borderBottom: '1px solid var(--border)' }}>
+              <Users size={14} color="var(--text-ghost)" />
+              <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--text-ghost)', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                 Teammates · {Object.values(teammates).filter(d => d.email !== user?.email).length}
               </span>
             </div>

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useParams, useLocation, useNavigate } from 'react-router-dom';
 import { Shield, Check, User, ArrowRight, Mail, Infinity } from 'lucide-react';
 import useStore from '../store/useStore';
+import Branding, { MiniBranding } from '../components/Branding';
 
 /* Dark-tinted avatar backgrounds so they look great on the dark theme */
 const AVATARS = [
@@ -60,34 +61,16 @@ export default function Onboarding() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, animation: 'fadeIn 0.4s ease' }}>
       <div style={{ width: '100%', maxWidth: 500 }}>
 
-        {/* Branding pill */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 36 }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 12,
-            background: 'var(--bg-raised)', border: '1px solid var(--border-hi)',
-            borderRadius: 18, padding: '10px 24px 10px 12px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
-          }}>
-            <div style={{ 
-              width: 36, height: 36, borderRadius: 10, 
-              background: 'var(--blue)', display: 'flex', 
-              alignItems: 'center', justifyContent: 'center',
-              boxShadow: '0 0 15px var(--blue-glow)',
-              transform: 'rotate(-5deg)'
-            }}>
-              <Infinity size={22} color="#fff" strokeWidth={2.5} />
-            </div>
-            <span style={{ fontSize: 14, fontWeight: 900, color: 'var(--text)', letterSpacing: '0.2px' }}>
-              {activeErr ? 'Access Forbidden' : (officeData?.n || 'Guddl.')}
-            </span>
-          </div>
+        {/* Branding Branding */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 48 }}>
+          <MiniBranding size={24} fontSize={22} />
         </div>
 
-        <div style={{ textAlign: 'center', marginBottom: 36 }}>
-          <h2 style={{ fontSize: 32, fontWeight: 900, color: 'var(--text)', marginBottom: 12, letterSpacing: '-1px' }}>
-            {activeErr ? 'Invite Link Error' : 'Welcome to the Team'}
+        <div style={{ textAlign: 'center', marginBottom: 48 }}>
+          <h2 style={{ fontSize: 36, fontWeight: 900, color: 'var(--text-ash)', marginBottom: 12, letterSpacing: '-1.5px' }}>
+            {activeErr ? 'Access Check' : 'Welcome to the team'}
           </h2>
-          <p style={{ color: 'var(--text-sub)', fontSize: 16, fontWeight: 500 }}>
+          <p style={{ color: 'var(--text-ghost)', fontSize: 17, fontWeight: 500 }}>
             {activeErr || 'Setting up your profile for Guddl.'}
           </p>
         </div>
