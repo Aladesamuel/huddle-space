@@ -60,28 +60,29 @@ export default function Onboarding() {
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 40, animation: 'fadeIn 0.4s ease' }}>
       <div style={{ width: '100%', maxWidth: 500 }}>
 
-        {/* Office pill */}
-        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 30 }}>
+        {/* Branding pill */}
+        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 36 }}>
           <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 9,
+            display: 'inline-flex', alignItems: 'center', gap: 10,
             background: 'var(--bg-raised)', border: '1px solid var(--border-hi)',
-            borderRadius: 999, padding: '7px 18px 7px 10px',
+            borderRadius: 16, padding: '10px 20px 10px 12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
           }}>
-            <div style={{ width: 28, height: 28, borderRadius: 8, background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <Infinity size={16} color="#fff" />
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: 'var(--blue)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Infinity size={22} color="#fff" strokeWidth={2.5} />
             </div>
-            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text)' }}>
-              {activeErr ? 'Access Denied' : (officeData?.n ?? 'Guddl.')}
+            <span style={{ fontSize: 13, fontWeight: 800, color: 'var(--text)', letterSpacing: '0.5px' }}>
+              {activeErr ? 'Access Forbidden' : (officeData?.n || 'Guddl.')}
             </span>
           </div>
         </div>
 
-        <div style={{ textAlign: 'center', marginBottom: 30 }}>
-          <h2 style={{ fontSize: 26, fontWeight: 700, color: 'var(--text)', marginBottom: 8 }}>
-            {activeErr ? 'Invalid invite' : 'Set up your profile'}
+        <div style={{ textAlign: 'center', marginBottom: 36 }}>
+          <h2 style={{ fontSize: 32, fontWeight: 900, color: 'var(--text)', marginBottom: 12, letterSpacing: '-1px' }}>
+            {activeErr ? 'Invite Link Error' : 'Welcome to the Team'}
           </h2>
-          <p style={{ color: 'var(--text-sub)', fontSize: 14 }}>
-            {activeErr || 'How your teammates see you in the office.'}
+          <p style={{ color: 'var(--text-sub)', fontSize: 16, fontWeight: 500 }}>
+            {activeErr || 'Setting up your profile for Guddl.'}
           </p>
         </div>
 

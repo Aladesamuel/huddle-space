@@ -2,39 +2,38 @@
 
 /* ── Design Tokens ─────────────────────────────────────────────────────── */
 :root {
-  --bg:           #111213;
-  --bg-raised:    #1c1e21;
-  --bg-tile:      #28292c;
-  --bg-tile-h:    #323438;
-  --bg-ctrl:      #202124;
+  --bg:           #0b0c0d;
+  --bg-raised:    #141618;
+  --bg-tile:      #1c1e21;
+  --bg-tile-h:    #242629;
+  --bg-ctrl:      #181a1c;
+  --bg-hover:     rgba(255,255,255,0.05);
 
-  --text:         #e8eaed;
-  --text-sub:     #9aa0a6;
-  --text-ghost:   #4d5156;
+  --text:         #f2f3f5;
+  --text-sub:     #8e9297;
+  --text-ghost:   #4f545c;
 
-  --border:       rgba(255,255,255,0.07);
-  --border-hi:    rgba(255,255,255,0.14);
+  --border:       rgba(255,255,255,0.06);
+  --border-hi:    rgba(255,255,255,0.12);
 
-  --blue:         #1a73e8;
-  --blue-glow:    rgba(26,115,232,0.35);
-  --blue-dim:     rgba(26,115,232,0.15);
+  --blue:         #3b82f6;
+  --blue-glow:    rgba(59,130,246,0.3);
+  --blue-dim:     rgba(59,130,246,0.1);
 
-  --green:        #34a853;
-  --green-dim:    rgba(52,168,83,0.18);
-  --amber:        #fbbc04;
-  --red:          #ea4335;
-  --red-dim:      rgba(234,67,53,0.18);
+  --green:        #10b981;
+  --green-glow:   rgba(16,185,129,0.3);
+  --amber:        #f59e0b;
+  --red:          #ef4444;
+  --purple:       #8b5cf6;
 
-  --r-tile:       20px;
-  --r-card:       16px;
+  --r-tile:       22px;
+  --r-card:       18px;
   --r-btn:        12px;
   --r-pill:       999px;
 
-  --sidebar-w:    68px;
-  --header-h:     68px;
-
-  --shadow-tile:  0 2px 8px rgba(0,0,0,0.5);
-  --shadow-popup: 0 20px 60px rgba(0,0,0,0.7);
+  --sidebar-w:    72px;
+  --header-h:     72px;
+  --shadow-lg:    0 12px 48px rgba(0,0,0,0.6);
 }
 
 /* ── Reset ─────────────────────────────────────────────────────────────── */
@@ -69,19 +68,19 @@ main {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 16px 0 20px;
-  gap: 2px;
+  padding: 20px 0;
+  gap: 8px;
   z-index: 300;
 }
 
 .sidebar-logo {
-  width: 36px; height: 36px;
-  border-radius: 10px;
+  width: 44px; height: 44px;
+  border-radius: 14px;
   background: var(--blue);
   display: flex; align-items: center; justify-content: center;
-  font-size: 18px;
-  margin-bottom: 20px;
-  box-shadow: 0 0 20px var(--blue-glow);
+  font-size: 22px;
+  margin-bottom: 24px;
+  box-shadow: 0 0 24px var(--blue-glow);
   flex-shrink: 0;
   cursor: default;
 }

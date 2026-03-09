@@ -52,19 +52,19 @@ export default function Dashboard() {
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', animation: 'fadeIn 0.4s ease' }}>
 
       {/* ── Header ─────────────────────────────────────────────────────── */}
-      <div className="page-header">
-        {/* Left: office name + count */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+      <div className="page-header" style={{ height: 'var(--header-h)', borderBottom: '1px solid var(--border)', padding: '0 24px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <div style={{
-            width: 38, height: 38, borderRadius: 10,
+            width: 42, height: 42, borderRadius: 12,
             background: 'var(--blue)', display: 'flex',
             alignItems: 'center', justifyContent: 'center',
-            boxShadow: '0 4px 14px var(--blue-glow)', flexShrink: 0,
-          }}>
-            <Infinity size={22} color="#fff" />
+            boxShadow: '0 0 20px var(--blue-glow)', flexShrink: 0,
+            transition: 'transform 0.2s ease'
+          }} className="sidebar-logo-mark">
+            <Infinity size={24} color="#fff" />
           </div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 18, color: 'var(--text)', lineHeight: 1.2, letterSpacing: '-0.5px' }}>
+            <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--text)', lineHeight: 1, letterSpacing: '-0.7px' }}>
               Guddl.
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>

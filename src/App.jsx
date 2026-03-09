@@ -28,8 +28,17 @@ function Sidebar({ collapsed, setCollapsed }) {
 
       {/* Office icon */}
       {user && inOffice && (
-        <button className="sidebar-btn active" title="Guddl.">
-          <Infinity size={20} />
+        <button 
+          className="sidebar-btn active" 
+          title="Guddl."
+          style={{ 
+            background: 'var(--blue)', 
+            boxShadow: '0 0 20px var(--blue-glow)',
+            color: '#fff',
+            borderRadius: 14
+          }}
+        >
+          <Infinity size={22} strokeWidth={2.5} />
         </button>
       )}
 
@@ -87,51 +96,51 @@ function Sidebar({ collapsed, setCollapsed }) {
 export default function App() {
   const { user } = useStore();
   const [collapsed, setCollapsed] = useState(false);
+  const location = useLocation();
+  const isLandingPage = location.pathname === '/';
 
   return (
-    <Router>
-      <div className={`app-container${collapsed ? ' sidebar-is-collapsed' : ''}`}>
-        <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+    <div className={`app-container${collapsed || isLandingPage ? ' sidebar-is-collapsed' : ''}`}>
+      {!isLandingPage && <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />}
 
-        {/* Floating re-open tab — appears only when sidebar is collapsed */}
-        {collapsed && (
-          <button
-            className="sidebar-toggle-floating"
-            onClick={() => setCollapsed(false)}
-            title="Expand sidebar"
-            style={{
-              position: 'fixed',
-              top: 14, left: 0,
-              zIndex: 400,
-              background: 'var(--bg-raised)',
-              border: '1px solid var(--border-hi)',
-              borderLeft: 'none',
-              borderRadius: '0 10px 10px 0',
-              width: 32, height: 44,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-              color: 'var(--text-sub)',
-              transition: 'color 0.2s ease, background 0.2s ease',
-              boxShadow: '2px 0 12px rgba(0,0,0,0.3)',
-            }}
-            onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.background = 'var(--bg-hover)'; }}
-            onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-sub)'; e.currentTarget.style.background = 'var(--bg-raised)'; }}
-          >
-            <PanelLeftOpen size={16} />
-          </button>
-        )}
+      {/* Floating re-open tab — appears only when sidebar is collapsed and not on landing page */}
+      {collapsed && !isLandingPage && (
+        <button
+          className="sidebar-toggle-floating"
+          onClick={() => setCollapsed(false)}
+          title="Expand sidebar"
+          style={{
+            position: 'fixed',
+            top: 14, left: 0,
+            zIndex: 400,
+            background: 'var(--bg-raised)',
+            border: '1px solid var(--border-hi)',
+            borderLeft: 'none',
+            borderRadius: '0 10px 10px 0',
+            width: 32, height: 44,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer',
+            color: 'var(--text-sub)',
+            transition: 'color 0.2s ease, background 0.2s ease',
+            boxShadow: '2px 0 12px rgba(0,0,0,0.3)',
+          }}
+          onMouseEnter={e => { e.currentTarget.style.color = 'var(--text)'; e.currentTarget.style.background = 'var(--bg-hover)'; }}
+          onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-sub)'; e.currentTarget.style.background = 'var(--bg-raised)'; }}
+        >
+          <PanelLeftOpen size={16} />
+        </button>
+      )}
 
-        <main style={{
-          marginLeft: collapsed ? '0px' : 'var(--sidebar-w)',
-          transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)',
-        }}>
-          <Routes>
-            <Route path="/"             element={<Home />} />
-            <Route path="/room/:roomId" element={<Onboarding />} />
-            <Route path="/office/:roomId" element={user ? <Dashboard /> : <Navigate to="/" replace />} />
-          </Routes>
-        </main>
-      </div>
-    </Router>
+      <main style={{
+        marginLeft: (collapsed || isLandingPage) ? '0px' : 'var(--sidebar-w)',
+        transition: 'margin-left 0.3s cubic-bezier(0.4,0,0.2,1)',
+      }}>
+        <Routes>
+          <Route path="/"             element={<Home />} />
+          <Route path="/room/:roomId" element={<Onboarding />} />
+          <Route path="/office/:roomId" element={user ? <Dashboard /> : <Navigate to="/" replace />} />
+        </Routes>
+      </main>
+    </div>
   );
 }
