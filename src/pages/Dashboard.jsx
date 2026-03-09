@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Infinity, Share2, Info, Users, Zap, Search, Calendar, Layout, UserCircle, LogOut } from 'lucide-react';
+import { Infinity, Share2, Info, Users, Zap, Search, Calendar, Layout, UserCircle, LogOut, Mic, X } from 'lucide-react';
 import useStore from '../store/useStore';
 import usePeer from '../hooks/usePeer';
 import HuddleBar from '../components/HuddlePopup';
@@ -14,7 +14,6 @@ export default function Dashboard() {
   const {
     isReady, broadcast, peer, connectionsRef,
     startAudio, stopAudio, setMicMuted,
-    startAudioShare, stopAudioShare, // Note: check if these are correct in the hook
     startScreenShare, stopScreenShare, remoteScreenStream,
   } = usePeer(roomId);
 
