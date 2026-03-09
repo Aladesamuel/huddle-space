@@ -231,21 +231,24 @@ export default function usePeer(roomId) {
         callAudioPeer(data.fromPeerId || conn.peer);
         
         // Broadcast to everyone else in the office that a huddle has been formed/joined
-        broadcast({ type: 'HUDDLE_JOIN', newPeerId: data.fromPeerId });
+        broadcast({ type: 'HUDDLE_JOIN', email: currentUser?.email, peerId: peerRef.current?.id });
         break;
       }
       case 'HUDDLE_JOIN':
-        // Huddle members should always be a list of unique EMAILS for the UI
-        useStore.getState().addHuddleMember(data.email);
+        if (data.email) useStore.getState().addHuddleMember(data.email);
         break;
       case 'HUDDLE_LEAVE': {
         const store = useStore.getState();
         audioCallsRef.current[conn.peer]?.close();
         delete audioCallsRef.current[conn.peer];
         removeRemoteAudio(conn.peer);
-        const remaining = store.huddle.members.filter(id => id !== conn.peer);
-        if (remaining.length === 0) store.leaveHuddle();
-        else store.joinHuddle(remaining);
+        
+        const leavingEmail = Object.keys(teammatesRef.current).find(e => teammatesRef.current[e].peerId === conn.peer);
+        if (leavingEmail) {
+          const remaining = store.huddle.members.filter(id => id !== leavingEmail);
+          if (remaining.length === 0) store.leaveHuddle();
+          else store.joinHuddle(remaining);
+        }
         break;
       }
       case 'SHARING_STARTED':

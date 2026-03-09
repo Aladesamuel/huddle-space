@@ -46,7 +46,8 @@ export default function HuddleBar({
   useEffect(() => {
     if (huddle.active && !audioStartedRef.current) {
       audioStartedRef.current = true;
-      startAudio(huddle.members, huddle.isMuted);
+      const memberPeerIds = huddle.members.map(email => teammates[email]?.peerId).filter(Boolean);
+      startAudio(memberPeerIds, huddle.isMuted);
     }
     if (!huddle.active) {
       audioStartedRef.current = false;
@@ -60,7 +61,10 @@ export default function HuddleBar({
   const toggleScreen = async () => {
     const mine = huddle.isSharing && huddle.streamerId === peer?.id;
     if (mine)                   stopScreenShare();
-    else if (!huddle.isSharing) await startScreenShare(huddle.members);
+    else if (!huddle.isSharing) {
+      const memberPeerIds = huddle.members.map(email => teammates[email]?.peerId).filter(Boolean);
+      await startScreenShare(memberPeerIds);
+    }
     else alert(`${teammates[huddle.streamerId]?.name ?? 'Someone'} is already sharing.`);
   };
 
